@@ -1,12 +1,10 @@
 open System
 open System.IO
-open System.Linq
 open System.Text.RegularExpressions
 open Falco.Markup
 open Markdig
-open Markdig.Extensions.Yaml
+open Markdig.Syntax.Inlines
 open Markdig.Renderers
-open Markdig.Renderers.Html
 open Markdig.Syntax
 
 type LayoutModel =
@@ -21,7 +19,6 @@ type LayoutTwoColModel =
 type ParsedMarkdownDocument =
     { Title : string
       Body  : string }
-
 module Markdown =
     let render (markdown : string) : ParsedMarkdownDocument =
         // Render Markdown as HTML
@@ -44,23 +41,35 @@ module Markdown =
         sw.Flush() |> ignore
         let renderedMarkdown = sw.ToString()
 
-        // Extract front matter
-        let frontmatter =
-            match doc.Descendants<YamlFrontMatterBlock>().FirstOrDefault() with
-            | null -> Map.empty
-            | yamlBlock ->
-                markdown
-                    .Substring(yamlBlock.Span.Start, yamlBlock.Span.End - yamlBlock.Span.Start + 1)
-                    .Split("\r")
-                |> Array.map (fun x ->
-                    let keyValue = x.Split(":")
-                    keyValue.[0].Trim(), keyValue.[1].Trim())
-                |> Map.ofArray
+        // // Extract front matter
+        // let frontmatter =
+        //     match doc.Descendants<YamlFrontMatterBlock>().FirstOrDefault() with
+        //     | null -> Map.empty
+        //     | yamlBlock ->
+        //         markdown
+        //             .Substring(yamlBlock.Span.Start + 3, yamlBlock.Span.End - yamlBlock.Span.Start - 5)
+        //             .Split(Environment.NewLine)
+        //         |> Array.map (fun x ->
+        //             let keyValue = x.Split(":")
+        //             keyValue.[0].Trim(), keyValue.[1].Trim())
+        //         |> Map.ofArray
+
+        // Extract title
+        let title =
+            doc.Descendants<HeadingBlock>()
+            |> Seq.tryFind (fun x -> x.Level = 1)
+            |> Option.bind (fun x ->
+                x.Inline
+                |> Seq.tryPick (fun i ->
+                    match i with
+                    | :? LiteralInline as literal -> Some(literal.ToString())
+                    | _ -> None))
+
 
         // Rewrite direct markdown doc links
         let body = Regex.Replace(renderedMarkdown, "([a-zA-Z\-]+)\.md", "$1.html")
 
-        { Title = Map.tryFind "title" frontmatter |> Option.defaultValue ""
+        { Title = title |> Option.defaultValue ""
           Body = body }
 
     let renderFile (path : string) =
@@ -86,6 +95,7 @@ module View =
             Text.h3 "Contents"
             Elem.ul [ Attr.class' "nl3 f6" ] [
                 Elem.li [] [ Elem.a [ Attr.href "get-started.html" ] [ Text.raw "Getting Started" ] ]
+                Elem.li [] [ Elem.a [ Attr.href "host-configuration.html" ] [ Text.raw "Host Configuration" ] ]
                 Elem.li [] [ Elem.a [ Attr.href "routing.html" ] [ Text.raw "Routing" ] ]
                 Elem.li [] [ Elem.a [ Attr.href "response.html" ] [ Text.raw "Writing responses" ] ]
                 Elem.li [] [ Elem.a [ Attr.href "request.html" ] [ Text.raw "Accessing request data" ] ]
@@ -97,6 +107,7 @@ module View =
                         Elem.li [] [ Elem.a [ Attr.href "authentication.html" ] [ Text.raw "Authentication & Authorization" ] ]
                     ]
                 ]
+                Elem.li [] [ Elem.a [ Attr.href "deployment.html" ] [ Text.raw "Deployment" ] ]
                 Elem.li [] [
                     Elem.a [ Attr.href "example-hello-world.html" ] [ Text.raw "Examples" ]
                     Elem.ul [] [
