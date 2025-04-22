@@ -41,19 +41,6 @@ module Markdown =
         sw.Flush() |> ignore
         let renderedMarkdown = sw.ToString()
 
-        // // Extract front matter
-        // let frontmatter =
-        //     match doc.Descendants<YamlFrontMatterBlock>().FirstOrDefault() with
-        //     | null -> Map.empty
-        //     | yamlBlock ->
-        //         markdown
-        //             .Substring(yamlBlock.Span.Start + 3, yamlBlock.Span.End - yamlBlock.Span.Start - 5)
-        //             .Split(Environment.NewLine)
-        //         |> Array.map (fun x ->
-        //             let keyValue = x.Split(":")
-        //             keyValue.[0].Trim(), keyValue.[1].Trim())
-        //         |> Map.ofArray
-
         // Extract title
         let title =
             doc.Descendants<HeadingBlock>()
@@ -182,7 +169,7 @@ module View =
                 Elem.h1 [ Attr.class' "mt4 mb3 fw4 f2" ]
                     [ Text.raw "Meet Falco." ]
                 Elem.h2 [ Attr.class' "mt0 mb4 fw4 f4 f3-l" ]
-                    [ Text.raw "Falco is a toolkit for building secure, fast, functional-first and fault-tolerant web applications using F#." ]
+                    [ Text.raw "Falco is a toolkit for building fast and functional-first web applications using F#." ]
 
                 Elem.div [ Attr.class' "tc" ] [
                     Elem.a [ Attr.href "/docs/get-started.html"; Attr.title "Learn how to get started using Falco"; Attr.class' "dib mh2 mb2 ph3 pv2 merlot bg-white ba b--white br2 no-underline" ]
