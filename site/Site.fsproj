@@ -3,11 +3,6 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
-
-    <ProjectDir>$([System.IO.Path]::GetFullPath("$(MSBuildThisFileDirectory)"))</ProjectDir>
-
-    <Generate>dotnet run --project $(ProjectDir) -- $(ProjectDir)</Generate>
-    <Develop>dotnet watch --project $(ProjectDir) -- run $(ProjectDir)</Develop>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,17 +12,6 @@
   <ItemGroup>
     <PackageReference Include="Falco.Markup" Version="1.*" />
     <PackageReference Include="Markdig" Version="0.*" />
-    <PackageReference Include="Scriban" Version="5.*" />
   </ItemGroup>
-
-  <Target Name="Generate">
-    <Message Importance="High" Text="$(Generate)" />
-    <Exec Command="$(Generate)" UseUtf8Encoding="Always"/>
-  </Target>
-
-  <Target Name="Develop">
-    <Message Importance="High" Text="$(Develop)" />
-    <Exec Command="$(Develop)" UseUtf8Encoding="Always"/>
-  </Target>
 
 </Project>
