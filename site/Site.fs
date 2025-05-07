@@ -217,7 +217,7 @@ module View =
                     Elem.img [ Attr.src "/icons/integrate.svg"; Attr.class' "w4 o-90" ]
                     Elem.h3 [ Attr.class' "mv2 white" ] [ Text.raw "Extensible" ]
                     Elem.div [ Attr.class' "mb3 white-90" ] [ Text.raw "Seamlessly integrates with existing libraries." ]
-                    Elem.a [ Attr.href "https://github.com/pimbrouwers/Falco/tree/master/samples/ScribanExample"; Attr.targetBlank; Attr.title "Example of incorporating a third-party view engine"; Attr.class' "dib mh2 pa2 f6 white ba b--white br2 no-underline" ]
+                    Elem.a [ Attr.href "https://github.com/falcoframework/Falco/tree/master/examples/ExternalViewEngine"; Attr.targetBlank; Attr.title "Example of incorporating a third-party view engine"; Attr.class' "dib mh2 pa2 f6 white ba b--white br2 no-underline" ]
                         [ Text.raw "Explore How" ]
                  ]
             ]
@@ -317,7 +317,7 @@ let main args =
     |> fun text -> File.WriteAllText(Path.Join(buildDirPath.FullName, "index.html"), text)
 
     printfn "Rendering docs..."
-    let docsDir = DirectoryInfo(Path.Join(workingDir.FullName, "../documentation"))
+    let docsDir = DirectoryInfo(Path.Join(workingDir.FullName, "../docs"))
     let docsBuildDir = DirectoryInfo(Path.Join(buildDirPath.FullName, "docs"))
     let readme = FileInfo(Path.Join(workingDir.FullName, "../readme.md"))
     let docFiles = Array.append [|readme|] (docsDir.GetFiles("*.md"))
