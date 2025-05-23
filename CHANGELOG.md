@@ -124,7 +124,7 @@ The project no longer intends to support anything prior to net6.0, which enables
 
 ### Removed
 
-- `Falco.Markup`, module has been extracted into it's own [project](https://github.com/pimbrouwers/Falco.Markup).
+- `Falco.Markup`, module has been extracted into it's own [project](https://github.com/FalcoFramework/Falco.Markup).
 - Additional `StringCollectionReader` constructors, per-collection type.
 - `StringCollectionReader.TryArrayString`, use `StringCollectionReader.GetStringArray`
 - `StringCollectionReader.TryArrayInt16`, use `StringCollectionReader.GetInt16Array`

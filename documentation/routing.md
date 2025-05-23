@@ -114,4 +114,4 @@ wapp.UseRouting()
     .Run()
 ```
 
-[Next: Writing responses](response.md)
+[Next: Response Writing](response.md)

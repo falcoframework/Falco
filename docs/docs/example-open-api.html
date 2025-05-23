@@ -1,0 +1,103 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Example - Open API - Falco Documentation</title><meta name="description" content="A functional-first toolkit for building brilliant ASP.NET Core applications using F#." /><link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" /><link rel="icon" href="/favicon.ico" type="image/x-icon" /><link rel="preconnect" href="https://fonts.gstatic.com" /><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet" /><link href="/prism.css" rel="stylesheet" /><link href="/tachyons.css" rel="stylesheet" /><link href="/style.css" rel="stylesheet" /><script async src="https://www.googletagmanager.com/gtag/js?id=G-D62HSJHMNZ"></script><script>window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', 'G-D62HSJHMNZ');</script></head><body class="noto lh-copy"><div class="min-vh-100 mw9 center pa3 overflow-hidden"><nav class="sidebar w-20-l fl-l mb3 mb0-l"><div class="flex items-center"><a href="/docs" class="db w3 w4-l"><img src="/brand.svg" class="br3" /></a><h2 class="dn-l mt3 ml3 fw4 gray">Falco Documentation</h2></div><div class="dn db-l"><h3>Contents</h3><ul class="nl3 f6"><li><a href="get-started.html">Getting Started</a></li><li><a href="routing.html">Routing</a></li><li><a href="response.html">Response Writing</a></li><li><a href="request.html">Request Handling</a></li><li><a href="markup.html">Markup</a></li><li>Security<ul><li><a href="cross-site-request-forgery.html">Cross Site Request Forgery (XSRF)</a></li><li><a href="authentication.html">Authentication & Authorization</a></li></ul></li><li><a href="host-configuration.html">Host Configuration</a></li><li><a href="deployment.html">Deployment</a></li><li>Examples<ul><li><a href="example-hello-world.html">Hello World</a></li><li><a href="example-hello-world-mvc.html">Hello World MVC</a></li><li><a href="example-dependency-injection.html">Dependency Injection</a></li><li><a href="example-external-view-engine.html">External View Engine</a></li><li><a href="example-basic-rest-api.html">Basic REST API</a></li><li><a href="example-open-api.html">Open API</a></li><li><a href="example-htmx.html">htmx</a></li></ul></li><li><a href="migrating-from-v4-to-v5.html">V5 Migration Guide</a></li></ul></div></nav><main class="w-80-l fl-l pl3-l"><h1 id="example-open-api">Example - Open API</h1>
+<p>Open API is a specification for defining APIs in a machine-readable format. It allows developers to describe the structure of their APIs, including endpoints, request/response formats, and authentication methods.</p>
+<p><a href="https://github.com/FalcoFramework/Falco.OpenAPI">Falco.OpenAPI</a> is a library for generating OpenAPI documentation for Falco applications. It provides a set of combinators for annotating Falco routes with OpenAPI metadata, which can be used to generate OpenAPI documentation.</p>
+<p>We'll dial back the complexity a bit from the <a href="example-basic-rest-api.html">Basic REST API</a> example and create a simple &quot;fortune teller&quot; Falco application that serves OpenAPI documentation.</p>
+<p>The code for this example can be found <a href="https://github.com/FalcoFramework/Falco/tree/master/examples/OpenApi">here</a>.</p>
+<h2 id="creating-the-application-manually">Creating the Application Manually</h2>
+<pre><code class="language-shell">&gt; dotnet new falco -o OpenApiApi
+&gt; cd OpenApiApp
+&gt; dotnet add package Falco.OpenApi
+</code></pre>
+<h2 id="fortunes">Fortunes</h2>
+<p>Our fortune teller will return fortune for the name of the person specified. To model this, we'll create two simple record types.</p>
+<pre><code class="language-fsharp">type FortuneInput =
+    { Name : string }
+
+type Fortune =
+    { Description : string }
+</code></pre>
+<p>For simplicity, we'll use a static member to return a fortune. In a real application, you would likely retrieve this from a database or an external service.</p>
+<pre><code class="language-fsharp">module Fortune =
+    let create age input =
+        match age with
+        | Some age when age &gt; 0 -&gt;
+            { Description = $&quot;{input.Name}, you will experience great success when you are {age + 3}.&quot; }
+        | _ -&gt;
+            { Description = $&quot;{input.Name}, your future is unclear.&quot; }
+</code></pre>
+<h2 id="openapi-annotations">OpenAPI Annotations</h2>
+<p>Next, we'll annotate our route with OpenAPI metadata. This is done using the <code>OpenApi</code> module from the <code>Falco.OpenAPI</code> package. Below is the startup code for our fortune teller application. We'll dissect it after the code block, and then add the OpenAPI annotations.</p>
+<pre><code class="language-fsharp">[&lt;EntryPoint&gt;]
+let main args =
+    let bldr = WebApplication.CreateBuilder(args)
+
+    bldr.Services
+        .AddFalcoOpenApi()
+        // ^-- add OpenAPI services
+        .AddSwaggerGen()
+        // ^-- add Swagger services
+        |&gt; ignore
+
+    let wapp = bldr.Build()
+
+    wapp.UseHttpsRedirection()
+        .UseSwagger()
+        .UseSwaggerUI()
+    |&gt; ignore
+
+    let endpoints =
+        [
+            mapPost &quot;/fortune&quot;
+                (fun r -&gt; r?age.AsIntOption())
+                (fun ageOpt -&gt;
+                    Request.mapJson&lt;FortuneInput&gt; (Fortune.create ageOpt &gt;&gt; Response.ofJson))
+                // we'll add OpenAPI annotations here
+        ]
+
+    wapp.UseRouting()
+        .UseFalco(endpoints)
+        .Run()
+
+    0
+</code></pre>
+<p>We've created a simple Falco application that listens for POST requests to the <code>/fortune</code> endpoint. The request body is expected to be a JSON object with a <code>name</code> property. The response will be a JSON object with a <code>description</code> property.</p>
+<p>Now, let's add the OpenAPI annotations to our route.</p>
+<pre><code class="language-fsharp">[&lt;EntryPoint&gt;]
+let main args =
+    // ... application setup code ...
+    let endpoints =
+        [
+            mapPost &quot;/fortune&quot;
+                (fun r -&gt; r?age.AsIntOption())
+                (fun ageOpt -&gt;
+                    Request.mapJson&lt;FortuneInput&gt; (Fortune.create ageOpt &gt;&gt; Response.ofJson))
+                |&gt; OpenApi.name &quot;Fortune&quot;
+                |&gt; OpenApi.summary &quot;A mystic fortune teller&quot;
+                |&gt; OpenApi.description &quot;Get a glimpse into your future, if you dare.&quot;
+                |&gt; OpenApi.query [
+                    { Type = typeof&lt;int&gt;; Name = &quot;Age&quot;; Required = false } ]
+                |&gt; OpenApi.acceptsType typeof&lt;FortuneInput&gt;
+                |&gt; OpenApi.returnType typeof&lt;Fortune&gt;
+        ]
+
+    // ... application startup code ...
+
+    0 // Exit code
+</code></pre>
+<p>In the code above, we use the <code>OpenApi</code> module to annotate our route with metadata.</p>
+<p>Here's a breakdown of the annotations:</p>
+<ul>
+<li><code>OpenApi.name</code>: Sets the name of the operation.</li>
+<li><code>OpenApi.summary</code>: Provides a short summary of the operation.</li>
+<li><code>OpenApi.description</code>: Provides a detailed description of the operation.</li>
+<li><code>OpenApi.query</code>: Specifies the query parameters for the operation. In this case, we have an optional <code>age</code> parameter.</li>
+<li><code>OpenApi.acceptsType</code>: Specifies the expected request body type. In this case, we expect a JSON object that can be deserialized into a <code>FortuneInput</code> record.</li>
+<li><code>OpenApi.returnType</code>: Specifies the response type. In this case, we return a JSON object that can be serialized into a <code>Fortune</code> record.</li>
+</ul>
+<h2 id="wrapping-up">Wrapping Up</h2>
+<p>That's it! You've successfully created a simple Falco application with OpenAPI documentation. You can now use the generated OpenAPI specification to generate client code, create API documentation, or integrate with other tools that support OpenAPI.</p>
+<p><a href="example-htmx.html">Next: Example - htmx</a></p>
+</main></div><footer class="cl pa3 bg-merlot"><div class="f7 tc white-70">&copy; 2020-2025 Pim Brouwers & contributors.</div></footer><script src="/prism.js"></script></body></html>

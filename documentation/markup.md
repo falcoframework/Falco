@@ -268,7 +268,7 @@ let homepage =
 
 ## Custom Elements & Attributes
 
-Every effort has been taken to ensure the HTML and SVG specs are mapped to functions in the module. In the event an element or attribute you need is missing, you can either file an [issue](https://github.com/pimbrouwers/Falco.Markup/issues), or more simply extend the module in your project.
+Every effort has been taken to ensure the HTML and SVG specs are mapped to functions in the module. In the event an element or attribute you need is missing, you can either file an [issue](https://github.com/FalcoFramework/Falco.Markup/issues), or more simply extend the module in your project.
 
 An example creating custom XML elements and using them to create a structured XML document:
 

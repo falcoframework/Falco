@@ -136,4 +136,4 @@ let handlerWithCookieOptions : HttpHandler =
     >> Response.ofPlainText "Hello world"
 ```
 
-[Next: Accessing request data](request.md)
+[Next: Request Handling](request.md)

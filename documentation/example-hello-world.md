@@ -2,7 +2,7 @@
 
 The goal of this program is to demonstrate the absolute bare bones hello world application, so that we can focus on the key elements when initiating a new web application.
 
-The code for this example can be found [here](https://github.com/pimbrouwers/Falco/tree/master/examples/HelloWorld).
+The code for this example can be found [here](https://github.com/FalcoFramework/Falco/tree/master/examples/HelloWorld).
 
 ## Creating the Application Manually
 

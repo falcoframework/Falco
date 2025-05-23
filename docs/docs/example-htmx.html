@@ -1,0 +1,88 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Example - HTMX - Falco Documentation</title><meta name="description" content="A functional-first toolkit for building brilliant ASP.NET Core applications using F#." /><link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" /><link rel="icon" href="/favicon.ico" type="image/x-icon" /><link rel="preconnect" href="https://fonts.gstatic.com" /><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet" /><link href="/prism.css" rel="stylesheet" /><link href="/tachyons.css" rel="stylesheet" /><link href="/style.css" rel="stylesheet" /><script async src="https://www.googletagmanager.com/gtag/js?id=G-D62HSJHMNZ"></script><script>window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', 'G-D62HSJHMNZ');</script></head><body class="noto lh-copy"><div class="min-vh-100 mw9 center pa3 overflow-hidden"><nav class="sidebar w-20-l fl-l mb3 mb0-l"><div class="flex items-center"><a href="/docs" class="db w3 w4-l"><img src="/brand.svg" class="br3" /></a><h2 class="dn-l mt3 ml3 fw4 gray">Falco Documentation</h2></div><div class="dn db-l"><h3>Contents</h3><ul class="nl3 f6"><li><a href="get-started.html">Getting Started</a></li><li><a href="routing.html">Routing</a></li><li><a href="response.html">Response Writing</a></li><li><a href="request.html">Request Handling</a></li><li><a href="markup.html">Markup</a></li><li>Security<ul><li><a href="cross-site-request-forgery.html">Cross Site Request Forgery (XSRF)</a></li><li><a href="authentication.html">Authentication & Authorization</a></li></ul></li><li><a href="host-configuration.html">Host Configuration</a></li><li><a href="deployment.html">Deployment</a></li><li>Examples<ul><li><a href="example-hello-world.html">Hello World</a></li><li><a href="example-hello-world-mvc.html">Hello World MVC</a></li><li><a href="example-dependency-injection.html">Dependency Injection</a></li><li><a href="example-external-view-engine.html">External View Engine</a></li><li><a href="example-basic-rest-api.html">Basic REST API</a></li><li><a href="example-open-api.html">Open API</a></li><li><a href="example-htmx.html">htmx</a></li></ul></li><li><a href="migrating-from-v4-to-v5.html">V5 Migration Guide</a></li></ul></div></nav><main class="w-80-l fl-l pl3-l"><h1 id="example-htmx">Example - HTMX</h1>
+<p><a href="https://github.com/FalcoFramework/Falco.Htmx">Falco.Htmx</a> brings type-safe <a href="https://htmx.org/">htmx</a> support to <a href="https://github.com/FalcoFramework/Falco">Falco</a>. It provides a complete mapping of all attributes, typed request data and ready-made response modifiers.</p>
+<p>In this example, we'll demonstrate some of the more common htmx attributes and how to use them with Falco.</p>
+<p>At this point, we'll assume you have reviewed the docs, other examples and understand the basics of Falco. We don't be covering any of the basics in the code review.</p>
+<p>The code for this example can be found <a href="https://github.com/FalcoFramework/Falco/tree/master/examples/Htmx">here</a>.</p>
+<h2 id="creating-the-application-manually">Creating the Application Manually</h2>
+<pre><code class="language-shell">&gt; dotnet new falco -o HtmxApp
+&gt; cd HtmxApp
+&gt; dotnet add package Falco.Htmx
+</code></pre>
+<h2 id="layout">Layout</h2>
+<p>First we'll define a simple layout and enable htmx by including the script. Notice the strongly typed reference, <code>HtmxScript.cdnSrc</code>, which is provided by Falco.Htmx and resolves to the official CDN URL.</p>
+<pre><code class="language-fsharp">module View =
+    let template content =
+        Elem.html [ Attr.lang &quot;en&quot; ] [
+            Elem.head [] [
+                Elem.script [ Attr.src HtmxScript.cdnSrc ] [] ]
+            Elem.body []
+                content ]
+</code></pre>
+<h2 id="components">Components</h2>
+<p>A nice convention when working with Falco.Markup is to create a <code>Components</code> module within your <code>View</code> module. We'll define a few components here.</p>
+<p>All of the htmx attributes and properties are mapped within the <code>Hx</code> module. Wherever a limited scope of options exist, strongly typed references are provided. For example, <code>Hx.swapOuterHtml</code> is a strongly typed reference to the <code>hx-swap</code> attribute with the value <code>outerHTML</code>. This is a great way to avoid typos and ensure that your code is type-safe.</p>
+<pre><code class="language-fsharp">module View =
+    // Layout ...
+
+    module Components =
+        let clicker =
+            Elem.button
+                [ Hx.get &quot;/click&quot;
+                  Hx.swapOuterHtml ]
+                [ Text.raw &quot;Click Me&quot; ]
+
+        let resetter =
+            Elem.div [ Attr.id &quot;wrapper&quot; ] [
+                Text.h2 &quot;Way to go! You clicked it!&quot;
+                Elem.br []
+                Elem.button
+                    [ Hx.get &quot;/reset&quot;
+                      Hx.swapOuterHtml
+                      Hx.targetCss &quot;#wrapper&quot; ]
+                    [ Text.raw &quot;Reset&quot; ] ]
+</code></pre>
+<p>The <code>clicker</code> component is a simple button that will send a GET request to the server when clicked. The response will replace the button with the <code>resetter</code> component which will be rendered in the same location and can be used to restore the original state.</p>
+<h2 id="handlers">Handlers</h2>
+<p>Next we define a couple basic handlers to handle the requests for the original document and ajax requests.</p>
+<pre><code class="language-fsharp">module App =
+    let handleIndex : HttpHandler =
+        let html =
+            View.template [
+                Text.h1 &quot;Example: Click &amp; Swap&quot;
+                View.Components.clicker ]
+
+        Response.ofHtml html
+
+    let handleClick : HttpHandler =
+        Response.ofHtml View.Components.resetter
+
+    let handleReset : HttpHandler =
+        Response.ofHtml View.Components.clicker
+</code></pre>
+<p>You can see that the <code>handleClick</code> and <code>handleReset</code> handlers are simply returning the <code>resetter</code> and <code>clicker</code> components respectively. The <code>handleIndex</code> handler is returning the full HTML document with the <code>clicker</code> component.</p>
+<h2 id="web-server">Web Server</h2>
+<p>To finish things off, we'll map our handlers to the expected routes and initialize the web server.</p>
+<pre><code class="language-fsharp">[&lt;EntryPoint&gt;]
+let main args =
+    let wapp = WebApplication.Create()
+
+    let endpoints =
+        [
+            get &quot;/&quot; App.handleIndex
+            get &quot;/click&quot; App.handleClick
+            get &quot;/reset&quot; App.handleReset
+        ]
+
+    wapp.UseRouting()
+        .UseFalco(endpoints)
+        .Run()
+    0 // Exit code
+</code></pre>
+<h2 id="wrapping-up">Wrapping Up</h2>
+<p>That's it! You now have a simple web application that uses htmx to swap out components on the page without a full page reload. This is just the beginning of what you can do with htmx and Falco. You can use the same principles to create more complex interactions and components.</p>
+<p>For more information about the htmx integration, check out the <a href="https://github.com/FalcoFramework/Falco.Htmx">Falco.Htmx</a> repository. It contains a full list of all the attributes and properties that are available, as well as examples of how to use them.</p>
+<p><a href="/docs">Go back to docs home</a></p>
+</main></div><footer class="cl pa3 bg-merlot"><div class="f7 tc white-70">&copy; 2020-2025 Pim Brouwers & contributors.</div></footer><script src="/prism.js"></script></body></html>

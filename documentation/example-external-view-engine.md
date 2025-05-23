@@ -4,7 +4,7 @@ Falco comes packaged with a [built-in view engine](markup.md). But if you'd pref
 
 In this example we'll do some basic page rendering by integrating with [scriban](https://github.com/scriban/scriban). An amazing template engine by [xoofx](https://github.com/xoofx).
 
-The code for this example can be found [here](https://github.com/pimbrouwers/Falco/tree/master/examples/ExternalViewEngine).
+The code for this example can be found [here](https://github.com/FalcoFramework/Falco/tree/master/examples/ExternalViewEngine).
 
 ## Creating the Application Manually
 
@@ -121,3 +121,9 @@ let main args =
 
     0 // Exit code
 ```
+
+## Wrapping Up
+
+This example demonstrates how to effectively integrate an external view engine into your Falco application. By defining a simple interface, implementing it with Scriban and adding it to the dependency container, we can render HTML pages dynamically based on user input.
+
+[Next: Example - Basic REST API](example-basic-rest-api.md)
