@@ -128,6 +128,14 @@ let bodyString
         return! next body ctx
     }
 
+/// Projects header values onto 'T and provides to next HttpHandler.
+let mapHeader (map : RequestData -> 'T) (next : 'T -> HttpHandler) : HttpHandler =
+    fun ctx -> Request.getHeaders ctx |> map |> (fun header -> next header ctx)
+
+/// Projects cookie values onto 'T and provides to next HttpHandler.
+let mapCookie (map : RequestData -> 'T) (next : 'T -> HttpHandler) : HttpHandler =
+    fun ctx -> Request.getCookies ctx |> map |> (fun cookie -> next cookie ctx)
+
 /// Projects route values onto 'T and provides
 /// to next HttpHandler.
 let mapRoute
