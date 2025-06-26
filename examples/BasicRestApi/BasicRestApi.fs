@@ -7,8 +7,8 @@ open Falco
 open Falco.Routing
 open Microsoft.AspNetCore.Builder
 open Microsoft.Extensions.DependencyInjection
-open Microsoft.Data.Sqlite
-// ^-- a very useful Microsoft package
+open System.Data.SQLite
+// ^-- official SQLite package
 
 type Error =
     { Code : string
@@ -81,13 +81,7 @@ type UserStore(dbConnection : IDbConnectionFactory) =
             | :? DbExecutionException ->
                 Error { Code = "FAILED"; Message = "Could not add user" }
 
-module Route =
-    let userIndex = "/"
-    let userAdd = "/users"
-    let userView = "/users/{username}"
-    let userRemove = "/users/{username}"
-
-module ErrorPage =
+module ErrorResponse =
     let badRequest error : HttpHandler =
         Response.withStatusCode 400
         >> Response.ofJson error
@@ -99,6 +93,12 @@ module ErrorPage =
     let serverException : HttpHandler =
         Response.withStatusCode 500 >>
         Response.ofJson { Code = "500"; Message = "Server Error" }
+
+module Route =
+    let userIndex = "/users"
+    let userAdd = "/users"
+    let userView = "/users/{username}"
+    let userRemove = "/users/{username}"
 
 module UserEndpoint =
     let index : HttpHandler = fun ctx ->
@@ -112,7 +112,7 @@ module UserEndpoint =
         let userAddResponse =
             match userStore.Create(userJson) with
             | Ok result -> Response.ofJson result ctx
-            | Error error -> ErrorPage.badRequest error ctx
+            | Error error -> ErrorResponse.badRequest error ctx
         return! userAddResponse }
 
     let view : HttpHandler = fun ctx ->
@@ -121,7 +121,7 @@ module UserEndpoint =
         let username = route?username.AsString()
         match userStore.Read(username) with
         | Some user -> Response.ofJson user ctx
-        | None -> ErrorPage.notFound ctx
+        | None -> ErrorResponse.notFound ctx
 
     let remove : HttpHandler = fun ctx ->
         let userStore = ctx.Plug<IStore<string, User>>()
@@ -129,18 +129,21 @@ module UserEndpoint =
         let username = route?username.AsString()
         match userStore.Delete(username) with
         | Ok result -> Response.ofJson result ctx
-        | Error error -> ErrorPage.badRequest error ctx
+        | Error error -> ErrorResponse.badRequest error ctx
 
-module Program =
+module App =
     let endpoints =
         [ get Route.userIndex UserEndpoint.index
           post Route.userAdd UserEndpoint.add
           get Route.userView UserEndpoint.view
           delete Route.userRemove UserEndpoint.remove ]
 
+module Program =
     [<EntryPoint>]
     let main args =
-        let bldr = WebApplication.CreateBuilder(args)
+        let dbConnectionFactory =
+            { new IDbConnectionFactory with
+                member _.Create() = new SQLiteConnection("Data Source=BasicRestApi.sqlite3") }
 
         let initializeDatabase (dbConnection : IDbConnectionFactory) =
             use conn = dbConnection.Create()
@@ -148,16 +151,14 @@ module Program =
             |> Db.newCommand "CREATE TABLE IF NOT EXISTS user (username, full_name)"
             |> Db.exec
 
-        let dbConnectionFactory =
-            { new IDbConnectionFactory with
-                member _.Create() = new SqliteConnection("Data Source=BasicRestApi.sqlite3") }
-
         initializeDatabase dbConnectionFactory
+
+        let bldr = WebApplication.CreateBuilder(args)
 
         bldr.Services
             .AddAntiforgery()
             .AddSingleton<IDbConnectionFactory>(dbConnectionFactory)
-            .AddSingleton<IStore<string, User>, UserStore>()
+            .AddScoped<IStore<string, User>, UserStore>()
             |> ignore
 
         let wapp = bldr.Build()
@@ -165,10 +166,9 @@ module Program =
         let isDevelopment = wapp.Environment.EnvironmentName = "Development"
 
         wapp.UseIf(isDevelopment, DeveloperExceptionPageExtensions.UseDeveloperExceptionPage)
-            .UseIf(not(isDevelopment), FalcoExtensions.UseFalcoExceptionHandler ErrorPage.serverException)
-            .Use(AntiforgeryApplicationBuilderExtensions.UseAntiforgery)
+            .UseIf(not(isDevelopment), FalcoExtensions.UseFalcoExceptionHandler ErrorResponse.serverException)
             .UseRouting()
-            .UseFalco(endpoints)
-            .Run(ErrorPage.notFound)
+            .UseFalco(App.endpoints)
+            .Run(ErrorResponse.notFound)
 
         0

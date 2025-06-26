@@ -76,4 +76,4 @@ let logOut : HttpHandler =
     Response.signOutAndRedirect authScheme redirectTo
 ```
 
-[Next: Example - Hello World](example-hello-world.md)
+[Next: Host Configuration](host-configuration.md)

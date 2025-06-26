@@ -1,12 +1,10 @@
 open System
 open System.IO
-open System.Linq
 open System.Text.RegularExpressions
 open Falco.Markup
 open Markdig
-open Markdig.Extensions.Yaml
+open Markdig.Syntax.Inlines
 open Markdig.Renderers
-open Markdig.Renderers.Html
 open Markdig.Syntax
 
 type LayoutModel =
@@ -21,7 +19,6 @@ type LayoutTwoColModel =
 type ParsedMarkdownDocument =
     { Title : string
       Body  : string }
-
 module Markdown =
     let render (markdown : string) : ParsedMarkdownDocument =
         // Render Markdown as HTML
@@ -29,7 +26,6 @@ module Markdown =
             MarkdownPipelineBuilder()
                 .UseAutoIdentifiers()
                 .UsePipeTables()
-                .UseYamlFrontMatter()
                 .UseAutoLinks()
                 .Build()
 
@@ -44,23 +40,22 @@ module Markdown =
         sw.Flush() |> ignore
         let renderedMarkdown = sw.ToString()
 
-        // Extract front matter
-        let frontmatter =
-            match doc.Descendants<YamlFrontMatterBlock>().FirstOrDefault() with
-            | null -> Map.empty
-            | yamlBlock ->
-                markdown
-                    .Substring(yamlBlock.Span.Start, yamlBlock.Span.End - yamlBlock.Span.Start + 1)
-                    .Split("\r")
-                |> Array.map (fun x ->
-                    let keyValue = x.Split(":")
-                    keyValue.[0].Trim(), keyValue.[1].Trim())
-                |> Map.ofArray
+        // Extract title
+        let title =
+            doc.Descendants<HeadingBlock>()
+            |> Seq.tryFind (fun x -> x.Level = 1)
+            |> Option.bind (fun x ->
+                x.Inline
+                |> Seq.tryPick (fun i ->
+                    match i with
+                    | :? LiteralInline as literal -> Some(literal.ToString())
+                    | _ -> None))
+
 
         // Rewrite direct markdown doc links
-        let body = Regex.Replace(renderedMarkdown, "([a-zA-Z\-]+)\.md", "$1.html")
+        let body = Regex.Replace(renderedMarkdown.Replace("\"documentation/", "\"docs/"), "([a-zA-Z\-]+)\.md", "$1.html")
 
-        { Title = Map.tryFind "title" frontmatter |> Option.defaultValue ""
+        { Title = title |> Option.defaultValue ""
           Body = body }
 
     let renderFile (path : string) =
@@ -71,11 +66,11 @@ module View =
         [
             Elem.h3 [] [ Text.raw "Project Links" ]
             Elem.a [ Attr.href "/"] [ Text.raw "Project Homepage" ]
-            Elem.a [ Attr.class' "db"; Attr.href "https://github.com/pimbrouwers/Falco"; Attr.targetBlank ]
+            Elem.a [ Attr.class' "db"; Attr.href "https://github.com/FalcoFramework/Falco"; Attr.targetBlank ]
                 [ Text.raw "Source Code" ]
-            Elem.a [ Attr.class' "db"; Attr.href "https://github.com/pimbrouwers/Falco/issues"; Attr.targetBlank ]
+            Elem.a [ Attr.class' "db"; Attr.href "https://github.com/FalcoFramework/Falco/issues"; Attr.targetBlank ]
                 [ Text.raw "Issue Tracker" ]
-            Elem.a [ Attr.class' "db"; Attr.href "https://github.com/pimbrouwers/Falco/discussions"; Attr.targetBlank ]
+            Elem.a [ Attr.class' "db"; Attr.href "https://github.com/FalcoFramework/Falco/discussions"; Attr.targetBlank ]
                 [ Text.raw "Discussion" ]
             Elem.a [ Attr.class' "db"; Attr.href "https://twitter.com/falco_framework"; Attr.targetBlank ]
                 [ Text.raw "Twitter" ]
@@ -87,24 +82,28 @@ module View =
             Elem.ul [ Attr.class' "nl3 f6" ] [
                 Elem.li [] [ Elem.a [ Attr.href "get-started.html" ] [ Text.raw "Getting Started" ] ]
                 Elem.li [] [ Elem.a [ Attr.href "routing.html" ] [ Text.raw "Routing" ] ]
-                Elem.li [] [ Elem.a [ Attr.href "response.html" ] [ Text.raw "Writing responses" ] ]
-                Elem.li [] [ Elem.a [ Attr.href "request.html" ] [ Text.raw "Accessing request data" ] ]
-                Elem.li [] [ Elem.a [ Attr.href "markup.html" ] [ Text.raw "View engine" ] ]
+                Elem.li [] [ Elem.a [ Attr.href "response.html" ] [ Text.raw "Response Writing" ] ]
+                Elem.li [] [ Elem.a [ Attr.href "request.html" ] [ Text.raw "Request Handling" ] ]
+                Elem.li [] [ Elem.a [ Attr.href "markup.html" ] [ Text.raw "Markup" ] ]
                 Elem.li [] [
-                    Elem.a [ Attr.href "cross-site-request-forgery.html" ] [ Text.raw "Security" ]
+                    Text.raw "Security"
                     Elem.ul [] [
                         Elem.li [] [ Elem.a [ Attr.href "cross-site-request-forgery.html" ] [ Text.raw "Cross Site Request Forgery (XSRF)" ] ]
                         Elem.li [] [ Elem.a [ Attr.href "authentication.html" ] [ Text.raw "Authentication & Authorization" ] ]
                     ]
                 ]
+                Elem.li [] [ Elem.a [ Attr.href "host-configuration.html" ] [ Text.raw "Host Configuration" ] ]
+                Elem.li [] [ Elem.a [ Attr.href "deployment.html" ] [ Text.raw "Deployment" ] ]
                 Elem.li [] [
-                    Elem.a [ Attr.href "example-hello-world.html" ] [ Text.raw "Examples" ]
+                    Text.raw "Examples"
                     Elem.ul [] [
                         Elem.li [] [ Elem.a [ Attr.href "example-hello-world.html" ] [ Text.raw "Hello World" ] ]
                         Elem.li [] [ Elem.a [ Attr.href "example-hello-world-mvc.html" ] [ Text.raw "Hello World MVC" ] ]
                         Elem.li [] [ Elem.a [ Attr.href "example-dependency-injection.html" ] [ Text.raw "Dependency Injection" ] ]
-                        Elem.li [] [ Elem.a [ Attr.href "example-external-view-engine.html" ] [ Text.raw "Hello World" ] ]
+                        Elem.li [] [ Elem.a [ Attr.href "example-external-view-engine.html" ] [ Text.raw "External View Engine" ] ]
                         Elem.li [] [ Elem.a [ Attr.href "example-basic-rest-api.html" ] [ Text.raw "Basic REST API" ] ]
+                        Elem.li [] [ Elem.a [ Attr.href "example-open-api.html" ] [ Text.raw "Open API" ] ]
+                        Elem.li [] [ Elem.a [ Attr.href "example-htmx.html" ] [ Text.raw "htmx" ] ]
                     ]
                 ]
                 Elem.li [] [ Elem.a [ Attr.href "migrating-from-v4-to-v5.html" ] [ Text.raw "V5 Migration Guide" ] ]
@@ -156,11 +155,11 @@ module View =
                     Elem.div [ Attr.class' "flex-grow-1-l tc tr-l" ] [
                         Elem.a [ Attr.href "/docs"; Attr.title "Overview of Falco's key features"; Attr.class' "dib mh2 mh3-l no-underline white-90 hover-white" ]
                             [ Text.raw "docs" ]
-                        Elem.a [ Attr.href "https://github.com/pimbrouwers/Falco"; Attr.title "Fork Falco on GitHub"; Attr.alt "Falco GitHub Link"; Attr.targetBlank; Attr.class' "dib mh2 ml3-l no-underline white-90 hover-white" ]
+                        Elem.a [ Attr.href "https://github.com/FalcoFramework/Falco"; Attr.title "Fork Falco on GitHub"; Attr.alt "Falco GitHub Link"; Attr.targetBlank; Attr.class' "dib mh2 ml3-l no-underline white-90 hover-white" ]
                             [ Text.raw "code" ]
-                        Elem.a [ Attr.href "https://github.com/pimbrouwers/Falco/tree/master/examples"; Attr.title "Falco code samples"; Attr.alt "Faclo code samples link"; Attr.class' "dib ml2 mh3-l no-underline white-90 hover-white" ]
+                        Elem.a [ Attr.href "https://github.com/FalcoFramework/Falco/tree/master/examples"; Attr.title "Falco code samples"; Attr.alt "Faclo code samples link"; Attr.class' "dib ml2 mh3-l no-underline white-90 hover-white" ]
                             [ Text.raw "samples" ]
-                        Elem.a [ Attr.href "https://github.com/pimbrouwers/Falco/discussions"; Attr.title "Need help?"; Attr.alt "Faclo GitHub discussions link"; Attr.class' "dib ml2 mh3-l no-underline white-90 hover-white" ]
+                        Elem.a [ Attr.href "https://github.com/FalcoFramework/Falco/discussions"; Attr.title "Need help?"; Attr.alt "Faclo GitHub discussions link"; Attr.class' "dib ml2 mh3-l no-underline white-90 hover-white" ]
                             [ Text.raw "help" ]
                     ]
                 ]
@@ -171,7 +170,7 @@ module View =
                 Elem.h1 [ Attr.class' "mt4 mb3 fw4 f2" ]
                     [ Text.raw "Meet Falco." ]
                 Elem.h2 [ Attr.class' "mt0 mb4 fw4 f4 f3-l" ]
-                    [ Text.raw "Falco is a toolkit for building secure, fast, functional-first and fault-tolerant web applications using F#." ]
+                    [ Text.raw "Falco is a toolkit for building fast and functional-first web applications using F#." ]
 
                 Elem.div [ Attr.class' "tc" ] [
                     Elem.a [ Attr.href "/docs/get-started.html"; Attr.title "Learn how to get started using Falco"; Attr.class' "dib mh2 mb2 ph3 pv2 merlot bg-white ba b--white br2 no-underline" ]
@@ -219,7 +218,7 @@ module View =
                     Elem.img [ Attr.src "/icons/integrate.svg"; Attr.class' "w4 o-90" ]
                     Elem.h3 [ Attr.class' "mv2 white" ] [ Text.raw "Extensible" ]
                     Elem.div [ Attr.class' "mb3 white-90" ] [ Text.raw "Seamlessly integrates with existing libraries." ]
-                    Elem.a [ Attr.href "https://github.com/pimbrouwers/Falco/tree/master/samples/ScribanExample"; Attr.targetBlank; Attr.title "Example of incorporating a third-party view engine"; Attr.class' "dib mh2 pa2 f6 white ba b--white br2 no-underline" ]
+                    Elem.a [ Attr.href "https://github.com/FalcoFramework/Falco/tree/master/samples/ScribanExample"; Attr.targetBlank; Attr.title "Example of incorporating a third-party view engine"; Attr.class' "dib mh2 pa2 f6 white ba b--white br2 no-underline" ]
                         [ Text.raw "Explore How" ]
                  ]
             ]

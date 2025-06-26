@@ -2,7 +2,7 @@
 
 Let's take our basic [Hello World](example-hello-world.md) to the next level. This means we're going to dial up the complexity a little bit. But we'll do this using the well recognized MVC pattern. We'll contain the app to a single file to make "landscaping" the pattern more straight-forward.
 
-The code for this example can be found [here](https://github.com/pimbrouwers/Falco/tree/master/examples/HelloWorldMvc).
+The code for this example can be found [here](https://github.com/FalcoFramework/Falco/tree/master/examples/HelloWorldMvc).
 
 ## Creating the Application Manually
 
@@ -52,7 +52,7 @@ These 3 functions take a string input called `name` and plug it into the `{name}
 
 ## View
 
-Falco comes packaged with a [lovely little HTML DSL](https://github.com/pimbrouwers/Falco.Markup/). It can produce any form of angle-markup, and does so very [efficiently](https://github.com/pimbrouwers/Falco.Markup/?tab=readme-ov-file#performance). The main benefit is that our views are _pure_ F#, compile-time checked and live alongside the rest of our code.
+Falco comes packaged with a [lovely little HTML DSL](https://github.com/FalcoFramework/Falco.Markup/). It can produce any form of angle-markup, and does so very [efficiently](https://github.com/FalcoFramework/Falco.Markup/?tab=readme-ov-file#performance). The main benefit is that our views are _pure_ F#, compile-time checked and live alongside the rest of our code.
 
 First we define a shared HTML5 `layout` function, that references our project `style.css`. Next, we define a module to contain the views for our greetings.
 

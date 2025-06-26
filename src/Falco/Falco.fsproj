@@ -20,13 +20,13 @@
     <!-- NuGet config -->
     <PackageId>Falco</PackageId>
     <PackageTags>fsharp;functional;asp.net core;asp.net;.net core;routing;view engine;web;falco;falco-sharp;</PackageTags>
-    <PackageProjectUrl>https://github.com/pimbrouwers/Falco</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/FalcoFramework/Falco</PackageProjectUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/pimbrouwers/Falco</RepositoryUrl>
+    <RepositoryUrl>https://github.com/FalcoFramework/Falco</RepositoryUrl>
 
     <!-- SourceLink settings -->
     <PublishRepositoryUrl>true</PublishRepositoryUrl>

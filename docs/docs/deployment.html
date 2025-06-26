@@ -1,0 +1,36 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Deployment - Falco Documentation</title><meta name="description" content="A functional-first toolkit for building brilliant ASP.NET Core applications using F#." /><link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" /><link rel="icon" href="/favicon.ico" type="image/x-icon" /><link rel="preconnect" href="https://fonts.gstatic.com" /><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet" /><link href="/prism.css" rel="stylesheet" /><link href="/tachyons.css" rel="stylesheet" /><link href="/style.css" rel="stylesheet" /><script async src="https://www.googletagmanager.com/gtag/js?id=G-D62HSJHMNZ"></script><script>window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', 'G-D62HSJHMNZ');</script></head><body class="noto lh-copy"><div class="min-vh-100 mw9 center pa3 overflow-hidden"><nav class="sidebar w-20-l fl-l mb3 mb0-l"><div class="flex items-center"><a href="/docs" class="db w3 w4-l"><img src="/brand.svg" class="br3" /></a><h2 class="dn-l mt3 ml3 fw4 gray">Falco Documentation</h2></div><div class="dn db-l"><h3>Contents</h3><ul class="nl3 f6"><li><a href="get-started.html">Getting Started</a></li><li><a href="routing.html">Routing</a></li><li><a href="response.html">Response Writing</a></li><li><a href="request.html">Request Handling</a></li><li><a href="markup.html">Markup</a></li><li>Security<ul><li><a href="cross-site-request-forgery.html">Cross Site Request Forgery (XSRF)</a></li><li><a href="authentication.html">Authentication & Authorization</a></li></ul></li><li><a href="host-configuration.html">Host Configuration</a></li><li><a href="deployment.html">Deployment</a></li><li>Examples<ul><li><a href="example-hello-world.html">Hello World</a></li><li><a href="example-hello-world-mvc.html">Hello World MVC</a></li><li><a href="example-dependency-injection.html">Dependency Injection</a></li><li><a href="example-external-view-engine.html">External View Engine</a></li><li><a href="example-basic-rest-api.html">Basic REST API</a></li><li><a href="example-open-api.html">Open API</a></li><li><a href="example-htmx.html">htmx</a></li></ul></li><li><a href="migrating-from-v4-to-v5.html">V5 Migration Guide</a></li></ul></div></nav><main class="w-80-l fl-l pl3-l"><h1 id="deployment">Deployment</h1>
+<p>One of the key features of Falco is that it contains little to no &quot;magic&quot; (i.e., no hidden reflection or dynamic code). This means that Falco is both <a href="https://learn.microsoft.com/en-us/dotnet/core/deploying/trimming/trim-self-contained">trimmable</a> and <a href="https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot">AOT</a> compatible out of the box.</p>
+<p>This means that you can deploy your Falco application as a self-contained executable, or as a native AOT executable, with no additional configuration. A huge benefit of this is that you can deploy your Falco application to any environment, without having to worry about the underlying runtime or dependencies.</p>
+<blockquote>
+<p>Important! If you're in a <strong>scale-to-zero</strong> hosting environment consider using a <a href="https://learn.microsoft.com/en-us/dotnet/core/deploying/ready-to-run">ReadyToRun</a> deployment. This will ensure that your application will experience faster cold start times.</p>
+</blockquote>
+<h2 id="self-contained-deployments">Self-contained deployments</h2>
+<p>It is highly recommended to deploy your Falco application as a self-contained executable. This means that the .NET runtime and all dependencies are included in the deployment package, so you don't have to worry about the target environment having the correct version of .NET installed. This will result in a slightly larger deployment package, but it will ensure that your application runs correctly in any environment. The larger binary size can also be offset by using trim.</p>
+<p>Below is an example [Directory.Build.props] that will help enable the non-AOT features. These properties can also be added to you fsproj file.</p>
+<pre><code class="language-xml">&lt;Project&gt;
+    &lt;PropertyGroup&gt;
+        &lt;SelfContained&gt;true&lt;/SelfContained&gt;
+        &lt;PublishSingleFile&gt;true&lt;/PublishSingleFile&gt;
+        &lt;PublishTrimmed&gt;true&lt;/PublishTrimmed&gt;
+        &lt;TrimMode&gt;Link&lt;/TrimMode&gt;
+        &lt;IncludeNativeLibrariesForSelfExtract&gt;true&lt;/IncludeNativeLibrariesForSelfExtract&gt;
+        &lt;EnableCompressionInSingleFile&gt;true&lt;/EnableCompressionInSingleFile&gt;
+        &lt;!-- Optional: enable if in scale-to-zero hosting environment --&gt;
+        &lt;!-- &lt;PublishReadyToRun&gt;true&lt;/PublishReadyToRun&gt; --&gt;
+    &lt;/PropertyGroup&gt;
+&lt;/Project&gt;
+</code></pre>
+<h2 id="native-aot-deployments">Native AOT deployments</h2>
+<p>Publishing your app as Native AOT produces an app that's self-contained and that has been ahead-of-time (AOT) compiled to native code. Native AOT apps have faster startup time and smaller memory footprints. These apps can run on machines that don't have the .NET runtime installed.</p>
+<p>Since AOT deployments require trimming, and are single file by nature the only required msbuild property is:</p>
+<pre><code class="language-xml">&lt;Project&gt;
+    &lt;PropertyGroup&gt;
+        &lt;PublishAot&gt;true&lt;/PublishAot&gt;
+    &lt;/PropertyGroup&gt;
+&lt;/Project&gt;
+</code></pre>
+<p><a href="example-hello-world.html">Next: Example - Hello World</a></p>
+</main></div><footer class="cl pa3 bg-merlot"><div class="f7 tc white-70">&copy; 2020-2025 Pim Brouwers & contributors.</div></footer><script src="/prism.js"></script></body></html>

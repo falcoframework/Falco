@@ -22,6 +22,7 @@ function RunCommand {
 $rootDir = $PSScriptRoot
 $srcDir = Join-Path -Path $rootDir -ChildPath 'src'
 $testDir = Join-Path -Path $rootDir -ChildPath 'test'
+$docsOutputDir = Join-Path -Path $rootDir -ChildPath 'docs'
 
 switch ($Action) {
     "Test"            { $projectdir = Join-Path -Path $testDir -ChildPath 'Falco.Tests' }
@@ -44,7 +45,7 @@ switch ($Action) {
     "Test"            { RunCommand "dotnet test `"$projectDir`"" }
     "IntegrationTest" { RunCommand "dotnet test `"$projectDir`"" }
     "Pack"            { RunCommand "dotnet pack `"$projectDir`" -c $Configuration --include-symbols --include-source" }
-    "BuildSite"       { RunCommand "dotnet build `"$projectDir`" -t:Generate" }
-    "DevelopSite"     { RunCommand "dotnet build `"$projectDir`" -t:Develop" }
+    "BuildSite"       { RunCommand "dotnet run --project `"$projectDir`" `"$docsOutputDir`"" }
+    "DevelopSite"     { RunCommand "dotnet watch --project `"$projectDir`" -- run `"$docsOutputDir`"" }
     Default           { RunCommand "dotnet build `"$projectDir`" -c $Configuration" }
 }

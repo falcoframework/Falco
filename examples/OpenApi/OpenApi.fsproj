@@ -3,13 +3,13 @@
     <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Donald" Version="10.*" />
-    <PackageReference Include="System.Data.SQLite" Version="1.*" />
+    <PackageReference Include="Falco.OpenApi" Version="1.*" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.*" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Falco/Falco.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BasicRestApi.fs" />
+    <Compile Include="OpenApi.fs" />
   </ItemGroup>
 </Project>

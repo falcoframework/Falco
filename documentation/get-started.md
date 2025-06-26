@@ -50,7 +50,8 @@ let wapp = WebApplication.Create()
 wapp.UseRouting()
     .UseFalco(endpoints)
     // ^-- activate Falco endpoint source
-    .Run()
+    .Run(Response.ofPlainText "Not found")
+    // ^-- run app and register terminal (i.e., not found) middleware
 ```
 
 Run the application:
@@ -59,10 +60,6 @@ Run the application:
 > dotnet run
 ```
 
-And there you have it, an industrial-strength [Hello World](https://github.com/pimbrouwers/Falco/tree/master/examples/HelloWorld) web app. Pretty sweet!
-
-## Sample Applications
-
-Code is worth a thousand words. For the most up-to-date usage, the [examples](https://github.com/pimbrouwers/Falco/tree/master/examples/) directory contains a few sample applications.
+And there you have it, an industrial-strength [Hello World](https://github.com/FalcoFramework/Falco/tree/master/examples/HelloWorld) web app. Pretty sweet!
 
 [Next: Routing](routing.md)

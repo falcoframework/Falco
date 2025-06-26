@@ -1,0 +1,72 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Host Configuration - Falco Documentation</title><meta name="description" content="A functional-first toolkit for building brilliant ASP.NET Core applications using F#." /><link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" /><link rel="icon" href="/favicon.ico" type="image/x-icon" /><link rel="preconnect" href="https://fonts.gstatic.com" /><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet" /><link href="/prism.css" rel="stylesheet" /><link href="/tachyons.css" rel="stylesheet" /><link href="/style.css" rel="stylesheet" /><script async src="https://www.googletagmanager.com/gtag/js?id=G-D62HSJHMNZ"></script><script>window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', 'G-D62HSJHMNZ');</script></head><body class="noto lh-copy"><div class="min-vh-100 mw9 center pa3 overflow-hidden"><nav class="sidebar w-20-l fl-l mb3 mb0-l"><div class="flex items-center"><a href="/docs" class="db w3 w4-l"><img src="/brand.svg" class="br3" /></a><h2 class="dn-l mt3 ml3 fw4 gray">Falco Documentation</h2></div><div class="dn db-l"><h3>Contents</h3><ul class="nl3 f6"><li><a href="get-started.html">Getting Started</a></li><li><a href="routing.html">Routing</a></li><li><a href="response.html">Response Writing</a></li><li><a href="request.html">Request Handling</a></li><li><a href="markup.html">Markup</a></li><li>Security<ul><li><a href="cross-site-request-forgery.html">Cross Site Request Forgery (XSRF)</a></li><li><a href="authentication.html">Authentication & Authorization</a></li></ul></li><li><a href="host-configuration.html">Host Configuration</a></li><li><a href="deployment.html">Deployment</a></li><li>Examples<ul><li><a href="example-hello-world.html">Hello World</a></li><li><a href="example-hello-world-mvc.html">Hello World MVC</a></li><li><a href="example-dependency-injection.html">Dependency Injection</a></li><li><a href="example-external-view-engine.html">External View Engine</a></li><li><a href="example-basic-rest-api.html">Basic REST API</a></li><li><a href="example-open-api.html">Open API</a></li><li><a href="example-htmx.html">htmx</a></li></ul></li><li><a href="migrating-from-v4-to-v5.html">V5 Migration Guide</a></li></ul></div></nav><main class="w-80-l fl-l pl3-l"><h1 id="host-configuration">Host Configuration</h1>
+<p>As your app becomes more complex, you'll inevitably need to reach for some additional host configuration. This is where the <code>Microsoft.AspNetCore.Builder</code> import comes in. This assembly contains many useful extensions for configuring the server (ex: static files, authentication, authorization etc.).</p>
+<p>Most of the extension methods have existed since the early days of ASP.NET Core and operate against <code>IApplicationBuilder</code>. But more recent version of ASP.NET Core have introduced a new <code>WebApplication</code> type that implements <code>IApplicationBuilder</code> and provides some additional functionality,  notably endpoint configuration. This dichotomy makes pipelining next to impossible. In C# you don't feel the sting of this as much because of <code>void</code> returns. But in F# this results in an excess amount of <code>|&gt; ignore</code> calls.</p>
+<p>Let's take the hero code from the <a href="get-started.html">Getting Started</a> page and add the static file middleware to it:</p>
+<pre><code class="language-fsharp">module Program
+
+open Falco
+open Falco.Routing
+open Microsoft.AspNetCore.Builder
+
+let wapp = WebApplication.Create()
+
+wapp.UseRouting()
+    .UseDefaultFiles() // you might innocently think this is fine
+    .UseStaticFiles()  // and so is this
+                       // but uknowingly, the underlying type has changed
+    .UseFalco([
+        get &quot;/&quot; (Response.ofPlainText &quot;Hello World!&quot;)
+    ])
+    .Run(Response.ofPlainText &quot;Not found&quot;)
+    // ^-- this is no longer starts up our application
+
+// one way to fix this:
+wapp.UseRouting() |&gt; ignore
+wapp.UseDefaultFiles().UseStaticFiles() |&gt; ignore
+
+wapp.UseFalco([
+        get &quot;/&quot; (Response.ofPlainText &quot;Hello World!&quot;)
+    ])
+    .Run(Response.ofPlainText &quot;Not found&quot;)
+
+// but we can do better
+</code></pre>
+<p>To salve this, Falco comes with a several shims. The most important of these are <code>WebApplication.Use</code> and <code>WebApplication.UseIf</code> which allow you to compose a pipeline entirely driven by <code>WebApplication</code> while at the same time taking advantage of the existing ASP.NET Core extensions.</p>
+<pre><code class="language-fsharp">wapp.UseRouting()
+    .Use(fun (appl : IApplicationBuilder) -&gt;
+        appl.UseDefaultFiles()
+            .UseStaticFiles())
+    .UseFalco([
+        get &quot;/&quot; (Response.ofPlainText &quot;Hello World!&quot;)
+    ])
+    .Run(Response.ofPlainText &quot;Not found&quot;)
+</code></pre>
+<p>The optional, but recommended way to take advantage of these is to utilize the static methods that server as the underpinning to the various extension methods available. The code below will attempt to highlight this more clearly:</p>
+<pre><code class="language-fsharp">// better yet
+wapp.UseRouting()
+    .Use(DefaultFilesExtensions.UseDefaultFiles)
+    .Use(StaticFileExtensions.UseStaticFiles)
+      // ^-- most IApplicationBuilder extensions are available as static methods similar to this
+    .UseFalco([
+        get &quot;/&quot; (Response.ofPlainText &quot;Hello World!&quot;)
+    ])
+    .Run(Response.ofPlainText &quot;Not found&quot;)
+</code></pre>
+<p>Next, we can use the <code>UseIf</code> extension method to conditionally add middleware to the pipeline. This is useful for things like development exception pages, or other middleware that you only want in certain environments.</p>
+<pre><code class="language-fsharp">let isDevelopment = wapp.Environment.EnvironmentName = &quot;Development&quot;
+wapp.UseRouting()
+    .UseIf(isDevelopment, DeveloperExceptionPageExtensions.UseDeveloperExceptionPage)
+    .UseIf(not(isDevelopment), FalcoExtensions.UseFalcoExceptionHandler ErrorPage.serverException)
+    .Use(DefaultFilesExtensions.UseDefaultFiles)
+    .Use(StaticFileExtensions.UseStaticFiles)
+    .UseFalco([
+        get &quot;/&quot; (Response.ofPlainText &quot;Hello World!&quot;)
+    ])
+    .Run(Response.ofPlainText &quot;Not found&quot;)
+</code></pre>
+<p>This is a great way to keep your code clean and readable, while still taking advantage of the powerful middleware pipeline that ASP.NET Core provides.</p>
+<p><a href="deployment.html">Next: Deployment</a></p>
+</main></div><footer class="cl pa3 bg-merlot"><div class="f7 tc white-70">&copy; 2020-2025 Pim Brouwers & contributors.</div></footer><script src="/prism.js"></script></body></html>

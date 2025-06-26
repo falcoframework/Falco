@@ -1,7 +1,7 @@
 # Falco
 
 [![NuGet Version](https://img.shields.io/nuget/v/Falco.svg)](https://www.nuget.org/packages/Falco)
-[![build](https://github.com/pimbrouwers/Falco/actions/workflows/build.yml/badge.svg)](https://github.com/pimbrouwers/Falco/actions/workflows/build.yml)
+[![build](https://github.com/FalcoFramework/Falco/actions/workflows/build.yml/badge.svg)](https://github.com/FalcoFramework/Falco/actions/workflows/build.yml)
 
 ```fsharp
 open Falco
@@ -12,7 +12,7 @@ let wapp = WebApplication.Create()
 wapp.Run(Response.ofPlainText "Hello world")
 ```
 
-[Falco](https://github.com/pimbrouwers/Falco) is a toolkit for building functional-first, full-stack web applications using F#.
+[Falco](https://github.com/FalcoFramework/Falco) is a toolkit for building functional-first, full-stack web applications using F#.
 
 - Built on the high-performance components of ASP.NET Core.
 - Seamlessly integrates with existing .NET Core middleware and libraries.
@@ -36,14 +36,14 @@ wapp.Run(Response.ofPlainText "Hello world")
 
 ## Learn
 
-The best way to get started is by visiting the [documentation](https://falcoframework.com/docs). For questions and support please use [discussions](https://github.com/pimbrouwers/Falco/discussions). For chronological updates refer to the [changelog](CHANGELOG.md) is the best place to find chronological updates.
+The best way to get started is by visiting the [documentation](https://falcoframework.com/docs). For questions and support please use [discussions](https://github.com/FalcoFramework/Falco/discussions). For chronological updates refer to the [changelog](CHANGELOG.md) is the best place to find chronological updates.
 
 ### Related Libraries
 
-- [Falco.Markup](https://github.com/pimbrouwers/Falco.Markup) - an XML markup module primary used as the syntax for [authoring HTML with Falco](https://www.falcoframework.com/docs/markup.html).
+- [Falco.Markup](https://github.com/FalcoFramework/Falco.Markup) - an XML markup module primary used as the syntax for [authoring HTML with Falco](https://www.falcoframework.com/docs/markup.html).
 - [Falco.Htmx](https://github.com/dpraimeyuu/Falco.Htmx) - a full featured integration with [htmx JS package](https://htmx.org/).
-- [Falco.OpenApi](https://github.com/pimbrouwers/Falco.OpenApi) - a library for generating OpenAPI documentation from Falco applications.
-- [Falco.Template](https://github.com/pimbrouwers/Falco.Template) - a .NET SDK [project template](https://learn.microsoft.com/en-us/dotnet/core/tools/custom-templates) to help get started with Falco quickly.
+- [Falco.OpenApi](https://github.com/FalcoFramework/Falco.OpenApi) - a library for generating OpenAPI documentation from Falco applications.
+- [Falco.Template](https://github.com/FalcoFramework/Falco.Template) - a .NET SDK [project template](https://learn.microsoft.com/en-us/dotnet/core/tools/custom-templates) to help get started with Falco quickly.
 - [CloudSeed](https://cloudseed.xyz/) - a simple, scalable project boilerplate for F# / .NET.
 
 ### Community Projects
@@ -69,13 +69,13 @@ The best way to get started is by visiting the [documentation](https://falcofram
 
 ## Contribute
 
-We kindly ask that before submitting a pull request, you first submit an [issue](https://github.com/pimbrouwers/Falco/issues) or open a [discussion](https://github.com/pimbrouwers/Falco/discussions).
+We kindly ask that before submitting a pull request, you first submit an [issue](https://github.com/FalcoFramework/Falco/issues) or open a [discussion](https://github.com/FalcoFramework/Falco/discussions).
 
-If functionality is added to the API, or changed, please kindly update the relevant [document](docs). Unit tests must also be added and/or updated before a pull request can be successfully merged.
+If functionality is added to the API, or changed, please kindly update the relevant [document](/docs). Unit tests must also be added and/or updated before a pull request can be successfully merged.
 
 Only pull requests which pass all build checks and comply with the general coding standard can be approved.
 
-If you have any further questions, submit an [issue](https://github.com/pimbrouwers/Falco/issues) or open a [discussion](https://github.com/pimbrouwers/Falco/discussions) or reach out on [Twitter](https://twitter.com/falco_framework).
+If you have any further questions, submit an [issue](https://github.com/FalcoFramework/Falco/issues) or open a [discussion](https://github.com/FalcoFramework/Falco/discussions) or reach out on [Twitter](https://twitter.com/falco_framework).
 
 
 ## Why "Falco"?
@@ -85,9 +85,9 @@ If you have any further questions, submit an [issue](https://github.com/pimbrouw
 
 ## Find a bug?
 
-There's an [issue](https://github.com/pimbrouwers/Falco/issues) for that.
+There's an [issue](https://github.com/FalcoFramework/Falco/issues) for that.
 
 
 ## License
 
-Licensed under [Apache License 2.0](https://github.com/pimbrouwers/Falco/blob/master/LICENSE).
+Licensed under [Apache License 2.0](https://github.com/FalcoFramework/Falco/blob/master/LICENSE).

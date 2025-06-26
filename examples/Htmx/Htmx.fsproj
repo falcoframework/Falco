@@ -3,13 +3,12 @@
     <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Donald" Version="10.*" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.*" />
+    <PackageReference Include="Falco.Htmx" Version="1.*" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Falco/Falco.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BasicRestApiEvolved.fs" />
+    <Compile Include="Htmx.fs" />
   </ItemGroup>
 </Project>

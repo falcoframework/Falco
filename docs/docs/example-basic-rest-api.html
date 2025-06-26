@@ -1,0 +1,177 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Example - Basic REST API - Falco Documentation</title><meta name="description" content="A functional-first toolkit for building brilliant ASP.NET Core applications using F#." /><link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" /><link rel="icon" href="/favicon.ico" type="image/x-icon" /><link rel="preconnect" href="https://fonts.gstatic.com" /><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet" /><link href="/prism.css" rel="stylesheet" /><link href="/tachyons.css" rel="stylesheet" /><link href="/style.css" rel="stylesheet" /><script async src="https://www.googletagmanager.com/gtag/js?id=G-D62HSJHMNZ"></script><script>window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', 'G-D62HSJHMNZ');</script></head><body class="noto lh-copy"><div class="min-vh-100 mw9 center pa3 overflow-hidden"><nav class="sidebar w-20-l fl-l mb3 mb0-l"><div class="flex items-center"><a href="/docs" class="db w3 w4-l"><img src="/brand.svg" class="br3" /></a><h2 class="dn-l mt3 ml3 fw4 gray">Falco Documentation</h2></div><div class="dn db-l"><h3>Contents</h3><ul class="nl3 f6"><li><a href="get-started.html">Getting Started</a></li><li><a href="routing.html">Routing</a></li><li><a href="response.html">Response Writing</a></li><li><a href="request.html">Request Handling</a></li><li><a href="markup.html">Markup</a></li><li>Security<ul><li><a href="cross-site-request-forgery.html">Cross Site Request Forgery (XSRF)</a></li><li><a href="authentication.html">Authentication & Authorization</a></li></ul></li><li><a href="host-configuration.html">Host Configuration</a></li><li><a href="deployment.html">Deployment</a></li><li>Examples<ul><li><a href="example-hello-world.html">Hello World</a></li><li><a href="example-hello-world-mvc.html">Hello World MVC</a></li><li><a href="example-dependency-injection.html">Dependency Injection</a></li><li><a href="example-external-view-engine.html">External View Engine</a></li><li><a href="example-basic-rest-api.html">Basic REST API</a></li><li><a href="example-open-api.html">Open API</a></li><li><a href="example-htmx.html">htmx</a></li></ul></li><li><a href="migrating-from-v4-to-v5.html">V5 Migration Guide</a></li></ul></div></nav><main class="w-80-l fl-l pl3-l"><h1 id="example-basic-rest-api">Example - Basic REST API</h1>
+<p>This example demonstrates how to create a basic REST API using Falco. The API will allow users to perform CRUD (Create, Read, Update, Delete) operations on a simple resource, users in this case.</p>
+<p>The API will be built using the following components, in addition to the Falco framework:</p>
+<ul>
+<li><a href="https://www.nuget.org/packages/System.Data.SQLite/">System.Data.SQLite</a>, which provides SQLite support, built and maintained by the SQLite developers.</li>
+<li><a href="https://www.nuget.org/packages/Donald/">Donald</a> which simplifies database access, built and maintained by the Falco developers.</li>
+</ul>
+<blockquote>
+<p>For simplicity, we'll stick to sychronous database access in this example. However, you can easily adapt the code to use asynchronous database access if needed. Specific to SQLite, in many cases it is better to use synchronous access, and let SQLite handle serialization for you.</p>
+</blockquote>
+<p>The code for this example can be found <a href="https://github.com/FalcoFramework/Falco/tree/master/examples/BasicRestApi">here</a>.</p>
+<h2 id="creating-the-application-manually">Creating the Application Manually</h2>
+<pre><code class="language-shell">&gt; dotnet new falco -o BasicRestApiApp
+&gt; cd BasicRestApiApp
+&gt; dotnet add package System.Data.SQLite
+&gt; dotnet add package Donald
+</code></pre>
+<h2 id="overview">Overview</h2>
+<p>The API will consist of four endpoints:</p>
+<ul>
+<li><code>GET /users</code>: Retrieve all users.</li>
+<li><code>GET /users/{username}</code>: Retrieve a user by username.</li>
+<li><code>POST /users</code>: Create a new user.</li>
+<li><code>DELETE /users/{username}</code>: Delete a user by username.</li>
+</ul>
+<p>Users will be stored in a SQLite database, and the API will use Donald to interact with the database. Our user model will be a simple record type with two properties: <code>Username</code> and <code>Full Name</code>.</p>
+<pre><code class="language-fsharp">type User =
+    { Username : string
+      FullName : string }
+</code></pre>
+<p>It's also valueable to have a concrete type to represent API errors. This will be used to return error messages in a consistent format.</p>
+<pre><code class="language-fsharp">type Error =
+    { Code : string
+      Message : string }
+</code></pre>
+<h2 id="data-access">Data Access</h2>
+<p>To interact with the SQLite database, we'll create some abstractions for establishing new connections and performing database operations.</p>
+<p>A connection factory is a useful concept to avoid passing around connection strings. It allows us to create new connections without needing to know the details of how they are created.</p>
+<pre><code class="language-fsharp">type IDbConnectionFactory =
+    abstract member Create : unit -&gt; IDbConnection
+</code></pre>
+<p>We'll also define an interface for performing list, create, read and delete operations against a set of entities.</p>
+<pre><code class="language-fsharp">type IStore&lt;'TKey, 'TItem&gt; =
+    abstract member List : unit   -&gt; 'TItem list
+    abstract member Create : 'TItem -&gt; Result&lt;unit, Error&gt;
+    abstract member Read : 'TKey -&gt; 'TItem option
+    abstract member Delete : 'TKey -&gt; Result&lt;unit, Error&gt;
+</code></pre>
+<p>The <code>IStore</code> interface is generic, allowing us to use it with any type of entity. In our case, we'll create a concrete implementation for the <code>User</code> entity.</p>
+<h2 id="implementing-the-store">Implementing the Store</h2>
+<h2 id="error-responses">Error Responses</h2>
+<p>The API will return error responses in a consistent format. To do this, we'll create three functions for the common error cases: <code>notFound</code>, <code>badRequest</code>, and <code>serverException</code>.</p>
+<pre><code class="language-fsharp">module ErrorResponse =
+    let badRequest error : HttpHandler =
+        Response.withStatusCode 400
+        &gt;&gt; Response.ofJson error
+
+    let notFound : HttpHandler =
+        Response.withStatusCode 404 &gt;&gt;
+        Response.ofJson { Code = &quot;404&quot;; Message = &quot;Not Found&quot; }
+
+    let serverException : HttpHandler =
+        Response.withStatusCode 500 &gt;&gt;
+        Response.ofJson { Code = &quot;500&quot;; Message = &quot;Server Error&quot; }
+</code></pre>
+<p>Here you can see our error type in action, which is used to return a JSON response with the error code and message. The signature of the <code>badRequest</code> function is a bit different, as it takes an error object as input and returns a <code>HttpHandler</code>. The reason for this is that we intend to invoke this function from within our handlers, and we want to be able to pass the error object directly to it.</p>
+<h2 id="defining-the-endpoints">Defining the Endpoints</h2>
+<p>It can be very useful to define values for the endpoints we want to expose. This allows us to easily change the endpoint paths in one place if needed, and also provides intellisense support when using the endpoints in our code.</p>
+<pre><code class="language-fsharp">module Route =
+    let userIndex = &quot;/users&quot;
+    let userAdd = &quot;/users&quot;
+    let userView = &quot;/users/{username}&quot;
+    let userRemove = &quot;/users/{username}&quot;
+</code></pre>
+<p>Next, let's implement the handlers for each of the endpoints. First, we'll implement the <code>GET /users</code> endpoint, which retrieves all users from the database.</p>
+<pre><code class="language-fsharp">module UserEndpoint =
+    let index : HttpHandler = fun ctx -&gt;
+        let userStore = ctx.Plug&lt;IStore&lt;string, User&gt;&gt;()
+        let allUsers = userStore.List()
+        Response.ofJson allUsers ctx
+</code></pre>
+<p>The <code>index</code> function retrieves the <code>IStore</code> instance from the dependency container and calls the <code>List</code> method to get all users. The result is then returned as a JSON response.</p>
+<p>Next, we'll implement the <code>POST /users</code> endpoint, which creates a new user.</p>
+<pre><code class="language-fsharp">module UserEndpoint =
+    // ... index handler ...
+    let add : HttpHandler = fun ctx -&gt; task {
+        let userStore = ctx.Plug&lt;IStore&lt;string, User&gt;&gt;()
+        let! userJson = Request.getJson&lt;User&gt; ctx
+        let userAddResponse =
+            match userStore.Create(userJson) with
+            | Ok result -&gt; Response.ofJson result ctx
+            | Error error -&gt; ErrorResponse.badRequest error ctx
+        return! userAddResponse }
+</code></pre>
+<p>The <code>add</code> function retrieves the <code>IStore</code> instance from the dependency container and calls the <code>Create</code> method to add a new user. The result is then returned as a JSON response. If the user creation fails, we return a bad request error.</p>
+<p>Next, we'll implement the <code>GET /users/{username}</code> endpoint, which retrieves a user by username.</p>
+<pre><code class="language-fsharp">module UserEndpoint =
+    // ... index and add handlers ...
+    let view : HttpHandler = fun ctx -&gt;
+        let userStore = ctx.Plug&lt;IStore&lt;string, User&gt;&gt;()
+        let route = Request.getRoute ctx
+        let username = route?username.AsString()
+        match userStore.Read(username) with
+        | Some user -&gt; Response.ofJson user ctx
+        | None -&gt; ErrorResponse.notFound ctx
+</code></pre>
+<p>The <code>view</code> function retrieves the <code>IStore</code> instance from the dependency container and calls the <code>Read</code> method to get a user by username. If the user is found, it is returned as a JSON response. If not, we return a not found error.</p>
+<p>Finally, we'll implement the <code>DELETE /users/{username}</code> endpoint, which deletes a user by username.</p>
+<pre><code class="language-fsharp">module UserEndpoint =
+    // ... index, add and view handlers ...
+    let remove : HttpHandler = fun ctx -&gt;
+        let userStore = ctx.Plug&lt;IStore&lt;string, User&gt;&gt;()
+        let route = Request.getRoute ctx
+        let username = route?username.AsString()
+        match userStore.Delete(username) with
+        | Ok result -&gt; Response.ofJson result ctx
+        | Error error -&gt; ErrorResponse.badRequest error ctx
+</code></pre>
+<p>The <code>remove</code> function retrieves the <code>IStore</code> instance from the dependency container and calls the <code>Delete</code> method to remove a user by username. The result is then returned as a JSON response. If the user deletion fails, we return a bad request error.</p>
+<h2 id="configuring-the-application">Configuring the Application</h2>
+<p>Conventionally, you'll configure your database outside of your application scope. For the purpose of this example, we'll define and initialize the database during startup.</p>
+<pre><code class="language-fsharp">module Program =
+    [&lt;EntryPoint&gt;]
+    let main args =
+        let dbConnectionFactory =
+            { new IDbConnectionFactory with
+                member _.Create() = new SQLiteConnection(&quot;Data Source=BasicRestApi.sqlite3&quot;) }
+
+        let initializeDatabase (dbConnection : IDbConnectionFactory) =
+            use conn = dbConnection.Create()
+            conn
+            |&gt; Db.newCommand &quot;CREATE TABLE IF NOT EXISTS user (username, full_name)&quot;
+            |&gt; Db.exec
+
+        initializeDatabase dbConnectionFactory
+
+        // ... rest of the application setup
+</code></pre>
+<p>First we implement the <code>IDbConnectionFactory</code> interface, which creates a new SQLite connection. Then we define a <code>initializeDatabase</code> function, which creates the database and the user table if it doesn't exist. We encapsulate the database initialization in a function, so we can quickly dispose of the connection after use.</p>
+<p>Next, we need to register our database connection factory and the <code>IStore</code> implementation in the dependency container.</p>
+<pre><code class="language-fsharp">module Program =
+    [&lt;EntryPoint&gt;]
+    let main args =
+        // ... database initialization ...
+        let bldr = WebApplication.CreateBuilder(args)
+
+        bldr.Services
+            .AddAntiforgery()
+            .AddScoped&lt;IDbConnectionFactory&gt;(dbConnectionFactory)
+            .AddScoped&lt;IStore&lt;string, User&gt;, UserStore&gt;()
+            |&gt; ignore
+</code></pre>
+<p>Finally, we need to configure the application to use the defined endpoints.</p>
+<pre><code class="language-fsharp">module Program =
+    [&lt;EntryPoint&gt;]
+    let main args =
+        // ... database initialization &amp; dependency registration ...
+        let wapp = bldr.Build()
+
+        let isDevelopment = wapp.Environment.EnvironmentName = &quot;Development&quot;
+
+        wapp.UseIf(isDevelopment, DeveloperExceptionPageExtensions.UseDeveloperExceptionPage)
+            .UseIf(not(isDevelopment), FalcoExtensions.UseFalcoExceptionHandler ErrorResponse.serverException)
+            .UseRouting()
+            .UseFalco(App.endpoints)
+            .Run(ErrorResponse.notFound)
+
+        0 // Exit code
+</code></pre>
+<p>The <code>UseFalco</code> method is used to register the endpoints, and the <code>Run</code> method is used to handle requests that don't match any of the defined endpoints.</p>
+<h2 id="wrapping-up">Wrapping Up</h2>
+<p>And there you have it! A simple REST API built with Falco, SQLite and Donald. This example demonstrates how to create a basic CRUD API, but you can easily extend it to include more complex functionality, such as authentication, validation, and more.</p>
+<p><a href="example-open-api.html">Next: Example - Open API</a></p>
+</main></div><footer class="cl pa3 bg-merlot"><div class="f7 tc white-70">&copy; 2020-2025 Pim Brouwers & contributors.</div></footer><script src="/prism.js"></script></body></html>
