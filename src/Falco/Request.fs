@@ -95,7 +95,7 @@ let getJsonOptions<'T>
     (options : JsonSerializerOptions)
     (ctx : HttpContext) : Task<'T> = task {
 
-        if ctx.Request.ContentLength |> Option.ofNullable |> Option.defaultValue 0L = 0L then
+        if ctx.Request.Body.CanSeek && ctx.Request.Body.Length = 0L then
             return JsonSerializer.Deserialize<'T>("{}", options)
         else
             use tokenSource = new CancellationTokenSource()

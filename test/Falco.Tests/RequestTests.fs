@@ -188,3 +188,19 @@ let ``Request.getForm from Stream`` () =
 
     Request.mapForm (fun f -> f.GetString "name", f.Files) handle ctx |> ignore
     Request.mapFormSecure (fun f -> f.GetString "name", f.Files) handle Response.ofEmpty ctx |> ignore
+
+[<Fact>]
+let ``Request.mapJson Transfer-Encoding: chunked`` () =
+    let ctx = getHttpContextWriteable false
+    use ms = new MemoryStream(Encoding.UTF8.GetBytes("{\"name\":\"falco\"}"))
+    // Simulate chunked transfer encoding
+    ctx.Request.Headers.Add(HeaderNames.TransferEncoding, "chunked")
+    ctx.Request.Headers.Add(HeaderNames.ContentType, "application/json")
+
+    ctx.Request.Body.Returns(ms) |> ignore
+
+    let handle json : HttpHandler =
+        json.Name |> should equal "falco"
+        Response.ofEmpty
+
+    Request.mapJson handle ctx
