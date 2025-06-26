@@ -7,34 +7,34 @@ open Microsoft.AspNetCore.Builder
 
 module View =
     let template content =
-        Elem.html [ Attr.lang "en" ] [
-            Elem.head [] [
-                Elem.script [ Attr.src HtmxScript.cdnSrc ] [] ]
-            Elem.body []
+        _html [ _lang_ "en" ] [
+            _head [] [
+                _script [ _src_ HtmxScript.cdnSrc ] [] ]
+            _body []
                 content ]
 
     module Components =
         let clicker =
-            Elem.button
+            _button
                 [ Hx.get "/click"
                   Hx.swapOuterHtml ]
-                [ Text.raw "Click Me" ]
+                [ _text "Click Me" ]
 
         let resetter =
-            Elem.div [ Attr.id "wrapper" ] [
-                Text.h2 "Way to go! You clicked it!"
-                Elem.br []
-                Elem.button
+            _div [ _id_ "wrapper" ] [
+                _h2' "Way to go! You clicked it!"
+                _br []
+                _button
                     [ Hx.get "/reset"
                       Hx.swapOuterHtml
                       Hx.targetCss "#wrapper" ]
-                    [ Text.raw "Reset" ] ]
+                    [ _text "Reset" ] ]
 
 module App =
     let handleIndex : HttpHandler =
         let html =
             View.template [
-                Text.h1 "Example: Click & Swap"
+                _h1' "Example: Click & Swap"
                 View.Components.clicker ]
 
         Response.ofHtml html
