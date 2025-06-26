@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [5.0.2] - 2025-06-26
+
+### Fixed
+
+- Request module error for JSON transfer encoding chunked requests.
+
 ## [5.0.1] - 2025-06-26
 
 ### Added
