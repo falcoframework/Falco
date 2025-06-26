@@ -34,7 +34,6 @@ wapp.Run(Response.ofPlainText "Hello world")
 - Should be simple, extensible and integrate with existing .NET libraries.
 - Can be easily learned.
 
-
 ## Learn
 
 The best way to get started is by visiting the [documentation](https://falcoframework.com/docs). For questions and support please use [discussions](https://github.com/pimbrouwers/Falco/discussions). For chronological updates refer to the [changelog](CHANGELOG.md) is the best place to find chronological updates.

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <AssemblyName>Falco</AssemblyName>
-    <Version>5.0.0</Version>
+    <Version>5.0.1</Version>
 
     <!-- General info -->
     <Description>A functional-first toolkit for building brilliant ASP.NET Core applications using F#.</Description>
@@ -39,7 +39,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Falco.Markup" Version="1.*" />
+    <PackageReference Include="Falco.Markup" Version="1.2.*" />
     <PackageReference Update="FSharp.Core" Version="6.0.0" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.*" PrivateAssets="All" />
   </ItemGroup>

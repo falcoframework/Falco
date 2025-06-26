@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [5.0.1] - 2025-06-26
+
+### Added
+
+- `Falco.Markup` [version 1.2.0](https://www.nuget.org/packages/Falco.Markup/1.2.0) support, which includes a unified DSL module introduces consistent prefix-based naming conventions for elements, text shortcuts, and attributes, making code cleaner and more readable.
+
+### Fixed
+
+- `Request.mapCookies` and `Request.mapHeaders` re-added, which were accidentally removed in the 5.0.0 release.
+
 ## [5.0.0] - 2025-01-28
 
 ### Added

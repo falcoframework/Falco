@@ -23,7 +23,15 @@ let ``Request.getVerb should return HttpVerb from HttpContext`` () =
     |> should equal GET
 
 [<Fact>]
-let ``Request.getHeader should work for present and missing header names`` () =
+let ``Request.getCookies`` () =
+    let ctx = getHttpContextWriteable false
+    ctx.Request.Cookies <- Map.ofList ["name", "falco"] |> cookieCollection
+
+    let cookies= Request.getCookies ctx
+    cookies?name.AsString() |> should equal "falco"
+
+[<Fact>]
+let ``Request.getHeaders should work for present and missing header names`` () =
     let serverName = "Kestrel"
     let ctx = getHttpContextWriteable false
     ctx.Request.Headers.Add(HeaderNames.Server, StringValues(serverName))
@@ -75,6 +83,29 @@ let ``Request.mapJsonOption`` () =
     Request.mapJsonOptions options handle ctx
 
 [<Fact>]
+let ``Request.mapCookies`` () =
+    let ctx = getHttpContextWriteable false
+    ctx.Request.Cookies <- Map.ofList ["name", "falco"] |> cookieCollection
+
+    let handle name : HttpHandler =
+        name |> should equal "falco"
+        Response.ofEmpty
+
+    Request.mapCookies (fun r -> r.GetString "name") handle ctx
+
+[<Fact>]
+let ``Request.mapHeaders`` () =
+    let serverName = "Kestrel"
+    let ctx = getHttpContextWriteable false
+    ctx.Request.Headers.Add(HeaderNames.Server, StringValues(serverName))
+
+    let handle server : HttpHandler =
+        server |> should equal serverName
+        Response.ofEmpty
+
+    Request.mapHeaders (fun r -> r.GetString HeaderNames.Server) handle ctx
+
+[<Fact>]
 let ``Request.mapRoute`` () =
     let ctx = getHttpContextWriteable false
     ctx.Request.RouteValues <- RouteValueDictionary({|name="falco"|})
@@ -84,14 +115,6 @@ let ``Request.mapRoute`` () =
         Response.ofEmpty
 
     Request.mapRoute (fun r -> r.GetString "name") handle ctx
-
-[<Fact>]
-let ``Request.getCookie`` () =
-    let ctx = getHttpContextWriteable false
-    ctx.Request.Cookies <- Map.ofList ["name", "falco"] |> cookieCollection
-
-    let cookies= Request.getCookies ctx
-    cookies?name.AsString() |> should equal "falco"
 
 [<Fact>]
 let ``Request.mapQuery`` () =

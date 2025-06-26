@@ -28,27 +28,27 @@ module View =
 
     let layout content =
         Templates.html5 "en"
-            [ Elem.link [ Attr.href "/style.css"; Attr.rel "stylesheet" ] ]
+            [ _link [ _href_ "/style.css"; _rel_ "stylesheet" ] ]
             content
 
     module GreetingView =
         let detail greeting =
             layout [
-                Text.h1 $"Hello {greeting.Name} using HTML"
-                Elem.hr []
-                Text.p "Greet other ways:"
-                Elem.nav [] [
-                    Elem.a
-                        [ Attr.href (Url.greetHtml greeting.Name) ]
-                        [ Text.raw "Greet in HTML"]
-                    Text.raw " | "
-                    Elem.a
-                        [ Attr.href (Url.greetPlainText greeting.Name) ]
-                        [ Text.raw "Greet in plain text"]
-                    Text.raw " | "
-                    Elem.a
-                        [ Attr.href (Url.greetJson greeting.Name) ]
-                        [ Text.raw "Greet in JSON " ]
+                _h1' $"Hello {greeting.Name} using HTML"
+                _hr []
+                _p' "Greet other ways:"
+                _nav [] [
+                    _a
+                        [ _href_ (Url.greetHtml greeting.Name) ]
+                        [ _text "Greet in HTML"]
+                    _text " | "
+                    _a
+                        [ _href_ (Url.greetPlainText greeting.Name) ]
+                        [ _text "Greet in plain text"]
+                    _text " | "
+                    _a
+                        [ _href_ (Url.greetJson greeting.Name) ]
+                        [ _text "Greet in JSON " ]
                 ]
             ]
 
@@ -60,11 +60,11 @@ module Controller =
     module ErrorController =
         let notFound : HttpHandler =
             Response.withStatusCode 404 >>
-            Response.ofHtml (layout [ Text.h1 "Not Found" ])
+            Response.ofHtml (layout [ _h1' "Not Found" ])
 
         let serverException : HttpHandler =
             Response.withStatusCode 500 >>
-            Response.ofHtml (layout [ Text.h1 "Server Error" ])
+            Response.ofHtml (layout [ _h1' "Server Error" ])
 
     module GreetingController =
         let index name =
