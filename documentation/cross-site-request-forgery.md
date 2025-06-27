@@ -44,15 +44,15 @@ open Falco.Markup
 open Falco.Security
 
 let formView token =
-    Elem.html [] [
-        Elem.body [] [
-            Elem.form [ Attr.methodPost ] [
+    _html [] [
+        _body [] [
+            _form [ _methodPost_ ] [
                 // using the CSRF HTML helper, recommended to include as first
                 // form element
                 Xsrf.antiforgeryInput token
-                Elem.control "first_name" [] [ Text.raw "First Name" ]
-                Elem.control "first_name" [] [ Text.raw "First Name" ]
-                Elem.input [ Attr.typeSubmit ]
+                _control "first_name" [] [ _text "First Name" ]
+                _control "first_name" [] [ _text "First Name" ]
+                _input [ _typeSubmit_ ]
             ]
         ]
     ]

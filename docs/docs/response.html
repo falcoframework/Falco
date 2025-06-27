@@ -11,10 +11,10 @@
 <p>Write your views in plain F#, directly in your assembly, using the <a href="markup.html">Markup</a> module. A performant F# DSL capable of generating any angle-bracket markup. Also available directly as a standalone <a href="https://www.nuget.org/packages/Falco.Markup">NuGet</a> package.</p>
 <pre><code class="language-fsharp">let htmlHandler : HttpHandler =
     let html =
-        Elem.html [ Attr.lang &quot;en&quot; ] [
-            Elem.head [] []
-            Elem.body [] [
-                Text.h1 &quot;Sample App&quot; // shorthand for: `Elem.h1 [] [ Text.raw &quot;Sample App&quot; ]`
+        _html [ _lang_ &quot;en&quot; ] [
+            _head [] []
+            _body [] [
+                _h1' &quot;Sample App&quot; // shorthand for: `_h1 [] [ Text.raw &quot;Sample App&quot; ]`
             ]
         ]
 
@@ -23,17 +23,14 @@
 // Automatically protect against XSS attacks
 let secureHtmlHandler : HttpHandler =
     let html token =
-        Elem.html [] [
-            Elem.body [] [
-                Elem.form [ Attr.method &quot;post&quot; ] [
-                    Elem.input [ Attr.name &quot;first_name&quot; ]
-
-                    Elem.input [ Attr.name &quot;last_name&quot; ]
-
+        _html [] [
+            _body [] [
+                _form [ _method_ &quot;post&quot; ] [
+                    _input [ _name_ &quot;first_name&quot; ]
+                    _input [ _name_ &quot;last_name&quot; ]
                     // using the CSRF HTML helper
                     Xsrf.antiforgeryInput token
-
-                    Elem.input [ Attr.type' &quot;submit&quot;; Attr.value &quot;Submit&quot; ]
+                    _input [ _type_ &quot;submit&quot;; _value_ &quot;Submit&quot; ]
                 ]
             ]
         ]

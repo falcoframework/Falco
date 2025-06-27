@@ -64,24 +64,24 @@ module View =
 
     let layout content =
         Templates.html5 "en"
-            [ Elem.link [ Attr.href "/style.css"; Attr.rel "stylesheet" ] ]
+            [ _link [ _href_ "/style.css"; _rel_ "stylesheet" ] ]
             content
 
     module GreetingView =
         /// HTML view for /greet/html
         let detail greeting =
             layout [
-                Text.h1 $"Hello {greeting.Name} from /html"
-                Elem.hr []
-                Text.p "Greet other ways:"
-                Elem.nav [] [
-                    Elem.a
-                        [ Attr.href (Url.greetPlainText greeting.Name) ]
-                        [ Text.raw "Greet in text"]
-                    Text.raw " | "
-                    Elem.a
-                        [ Attr.href (Url.greetJson greeting.Name) ]
-                        [ Text.raw "Greet in JSON " ]
+                _h1' $"Hello {greeting.Name} from /html"
+                _hr []
+                _p' "Greet other ways:"
+                _nav [] [
+                    _a
+                        [ _href_ (Url.greetPlainText greeting.Name) ]
+                        [ _text "Greet in text"]
+                    _text " | "
+                    _a
+                        [ _href_ (Url.greetJson greeting.Name) ]
+                        [ _text "Greet in JSON " ]
                 ]
             ]
 ```
@@ -106,11 +106,11 @@ module Controller =
     module ErrorController =
         let notFound : HttpHandler =
             Response.withStatusCode 404 >>
-            Response.ofHtml (View.layout [ Text.h1 "Not Found" ])
+            Response.ofHtml (View.layout [ _h1' "Not Found" ])
 
         let serverException : HttpHandler =
             Response.withStatusCode 500 >>
-            Response.ofHtml (View.layout [ Text.h1 "Server Error" ])
+            Response.ofHtml (View.layout [ _h1' "Server Error" ])
 ```
 
 Here we see the [`HttpResponseModifier`](repsonse.md#response-modifiers) at play, which set the status code before buffering out the HTML response. We'll reference these pages later when be [build the web server](#web-server).

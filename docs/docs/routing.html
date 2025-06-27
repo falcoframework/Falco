@@ -91,9 +91,9 @@ open Microsoft.AspNetCore.Builder
 
 let form =
     Templates.html5 &quot;en&quot; [] [
-        Elem.form [ Attr.method &quot;post&quot; ] [
-            Elem.input [ Attr.name &quot;name&quot; ]
-            Elem.input [ Attr.type' &quot;submit&quot; ] ] ]
+        _form [ _method_ &quot;post&quot; ] [
+            _input [ _name_ &quot;name&quot; ]
+            _input [ _type_ &quot;submit&quot; ] ] ]
 
 let wapp = WebApplication.Create()
 

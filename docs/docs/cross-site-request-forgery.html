@@ -37,15 +37,15 @@ wapp.UseAntiforgery()
 open Falco.Security
 
 let formView token =
-    Elem.html [] [
-        Elem.body [] [
-            Elem.form [ Attr.methodPost ] [
+    _html [] [
+        _body [] [
+            _form [ _methodPost_ ] [
                 // using the CSRF HTML helper, recommended to include as first
                 // form element
                 Xsrf.antiforgeryInput token
-                Elem.control &quot;first_name&quot; [] [ Text.raw &quot;First Name&quot; ]
-                Elem.control &quot;first_name&quot; [] [ Text.raw &quot;First Name&quot; ]
-                Elem.input [ Attr.typeSubmit ]
+                _control &quot;first_name&quot; [] [ _text &quot;First Name&quot; ]
+                _control &quot;first_name&quot; [] [ _text &quot;First Name&quot; ]
+                _input [ _typeSubmit_ ]
             ]
         ]
     ]

@@ -16,10 +16,10 @@ Write your views in plain F#, directly in your assembly, using the [Markup](mark
 ```fsharp
 let htmlHandler : HttpHandler =
     let html =
-        Elem.html [ Attr.lang "en" ] [
-            Elem.head [] []
-            Elem.body [] [
-                Text.h1 "Sample App" // shorthand for: `Elem.h1 [] [ Text.raw "Sample App" ]`
+        _html [ _lang_ "en" ] [
+            _head [] []
+            _body [] [
+                _h1' "Sample App" // shorthand for: `_h1 [] [ Text.raw "Sample App" ]`
             ]
         ]
 
@@ -28,17 +28,14 @@ let htmlHandler : HttpHandler =
 // Automatically protect against XSS attacks
 let secureHtmlHandler : HttpHandler =
     let html token =
-        Elem.html [] [
-            Elem.body [] [
-                Elem.form [ Attr.method "post" ] [
-                    Elem.input [ Attr.name "first_name" ]
-
-                    Elem.input [ Attr.name "last_name" ]
-
+        _html [] [
+            _body [] [
+                _form [ _method_ "post" ] [
+                    _input [ _name_ "first_name" ]
+                    _input [ _name_ "last_name" ]
                     // using the CSRF HTML helper
                     Xsrf.antiforgeryInput token
-
-                    Elem.input [ Attr.type' "submit"; Attr.value "Submit" ]
+                    _input [ _type_ "submit"; _value_ "Submit" ]
                 ]
             ]
         ]

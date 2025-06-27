@@ -6,29 +6,38 @@ Primary elements are broken down into two types, `ParentNode` or `SelfClosingNod
 
 `ParentNode` elements are those that can contain other elements. Represented as functions that receive two inputs: attributes and optionally elements.
 
+Each of the primary modules can be access using the name directly, or using the "underscore syntax" seen below.
+
+| Module | Syntax |
+|--------|--------|
+| `Elem` | `_h1 [] []` |
+| `Attr` | `_class_ "my-class"` |
+| `Text` | `_text "Hello world!"` |
+| `Text` shortcuts | `_h1' "Hello world"` |
+
+
 ```fsharp
 let markup =
-    Elem.div [ Attr.class' "heading" ] [
-        Text.h1 "Hello world!" ]
+    _div [ _class_ "heading" ] [
+        _h1' "Hello world!" ]
 ```
 
 `SelfClosingNode` elements are self-closing tags. Represented as functions that receive one input: attributes.
 
 ```fsharp
 let markup =
-    Elem.div [ Attr.class' "divider" ] [
-        Elem.hr [] ]
+    _div [ _class_ "divider" ] [
+        _hr [] ]
 ```
 
 Text is represented using the `TextNode` and created using one of the functions in the `Text` module.
 
 ```fsharp
 let markup =
-    Elem.div [] [
-        Text.comment "An HTML comment"
-        Text.p "A paragraph"
-        Elem.p [] [ Text.rawf "Hello %s" "Jim" ]
-        Elem.code [] [ Text.enc "<div>Hello</div>" ] // HTML encodes text before rendering
+    _div [] [
+        _p' "A paragraph"
+        _p [] [ _textf "Hello %s" "Jim" ]
+        _code [] [ _textEnc "<div>Hello</div>" ] // HTML encodes text before rendering
     ]
 ```
 
@@ -36,14 +45,14 @@ Attributes contain two subtypes as well, `KeyValueAttr` which represent key/valu
 
 ```fsharp
 let markup =
-    Elem.input [ Attr.type' "text"; Attr.required ]
+    _input [ _type_ "text"; _required_ ]
 ```
 
-Most [JavaScript Events](https://developer.mozilla.org/en-US/docs/Web/Events) have also been mapped in the `Attr` module. All of these events are prefixed with the word "on" (i.e., `Attr.onclick`, `Attr.onfocus` etc.)
+Most [JavaScript Events](https://developer.mozilla.org/en-US/docs/Web/Events) have also been mapped in the `Attr` module. All of these events are prefixed with the word "on" (i.e., `_onclick_`, `_onfocus_` etc.)
 
 ```fsharp
 let markup =
-    Elem.button [ Attr.onclick "console.log(\"hello world\")" ] [ Text.raw "Click me" ]
+    _button [ _onclick_ "console.log(\"hello world\")" ] [ _text "Click me" ]
 ```
 
 ## HTML
@@ -57,30 +66,30 @@ open Falco.Markup
 
 // Components
 let divider =
-    Elem.hr [ Attr.class' "divider" ]
+    _hr [ _class_ "divider" ]
 
 // Template
 let master (title : string) (content : XmlNode list) =
-    Elem.html [ Attr.lang "en" ] [
-        Elem.head [] [
-            Elem.title [] [ Text.raw title ]
+    _html [ _lang_ "en" ] [
+        _head [] [
+            _title [] [ _text title ]
         ]
-        Elem.body [] content
+        _body [] content
     ]
 
 // Views
 let homeView =
     master "Homepage" [
-        Text.h1 "Homepage"
+        _h1' "Homepage"
         divider
-        Text.p "Lorem ipsum dolor sit amet, consectetur adipiscing."
+        _p' "Lorem ipsum dolor sit amet, consectetur adipiscing."
     ]
 
 let aboutView =
     master "About Us" [
-        Text.h1 "About"
+        _h1' "About"
         divider
-        Text.p "Lorem ipsum dolor sit amet, consectetur adipiscing."
+        _p' "Lorem ipsum dolor sit amet, consectetur adipiscing."
     ]
 ```
 
@@ -94,14 +103,14 @@ type Person =
       LastName : string }
 
 let doc (person : Person) =
-    Elem.html [ Attr.lang "en" ] [
-        Elem.head [] [
-            Elem.title [] [ Text.raw "Sample App" ]
+    _html [ _lang_ "en" ] [
+        _head [] [
+            _title [] [ _text "Sample App" ]
         ]
-        Elem.body [] [
-            Elem.main [] [
-                Text.h1 "Sample App"
-                Text.p $"{person.First} {person.Last}"
+        _body [] [
+            _main [] [
+                _h1' "Sample App"
+                _p' $"{person.First} {person.Last}"
             ]
         ]
     ]
@@ -114,113 +123,113 @@ Forms are the lifeblood of HTML applications. A basic form using the markup modu
 ```fsharp
 let dt = DateTime.Now
 
-Elem.form [ Attr.methodPost; Attr.action "/submit" ] [
-    Elem.label [ Attr.for' "name" ] [ Text.raw "Name" ]
-    Elem.input [ Attr.id "name"; Attr.name "name"; Attr.typeText ]
+_form [ _methodPost_; _action_ "/submit" ] [
+    _label [ _for_' "name" ] [ _text "Name" ]
+    _input [ _id_ "name"; _name_ "name"; _typeText_ ]
 
-    Elem.label [ Attr.for' "birthdate" ] [ Text.raw "Birthday" ]
-    Elem.input [ Attr.id "birthdate"; Attr.name "birthdate"; Attr.typeDate; Attr.valueDate dt ]
+    _label [ _for_' "birthdate" ] [ _text "Birthday" ]
+    _input [ _id_ "birthdate"; _name_ "birthdate"; _typeDate_; _valueDate_ dt ]
 
-    Elem.input [ Attr.typeSubmit ]
+    _input [ _typeSubmit_ ]
 ]
 ```
 
 Expanding on this, we can create a more complex form involving multiple inputs and input types as follows:
 
 ```fsharp
-Elem.form [ Attr.method "post"; Attr.action "/submit" ] [
-    Elem.label [ Attr.for' "name" ] [ Text.raw "Name" ]
-    Elem.input [ Attr.id "name"; Attr.name "name" ]
+_form [ _methodPost_; _action_ "/submit" ] [
+    _label [ _for_' "name" ] [ _text "Name" ]
+    _input [ _id_ "name"; _name_ "name" ]
 
-    Elem.label [ Attr.for' "bio" ] [ Text.raw "Bio" ]
-    Elem.textarea [ Attr.name "id"; Attr.name "bio" ] []
+    _label [ _for_' "bio" ] [ _text "Bio" ]
+    _textarea [ _name_ "id"; _name_ "bio" ] []
 
-    Elem.label [ Attr.for' "hobbies" ] [ Text.raw "Hobbies" ]
-    Elem.select [ Attr.id "hobbies"; Attr.name "hobbies"; Attr.multiple ] [
-        Elem.option [ Attr.value "programming" ] [ Text.raw "Programming" ]
-        Elem.option [ Attr.value "diy" ] [ Text.raw "DIY" ]
-        Elem.option [ Attr.value "basketball" ] [ Text.raw "Basketball" ]
+    _label [ _for_' "hobbies" ] [ _text "Hobbies" ]
+    _select [ _id_ "hobbies"; _name_ "hobbies"; _multiple_ ] [
+        _option [ _value_ "programming" ] [ _text "Programming" ]
+        _option [ _value_ "diy" ] [ _text "DIY" ]
+        _option [ _value_ "basketball" ] [ _text "Basketball" ]
     ]
 
-    Elem.fieldset [] [
-        Elem.legend [] [ Text.raw "Do you like chocolate?" ]
-        Elem.label [] [
-            Text.raw "Yes"
-            Elem.input [ Attr.typeRadio; Attr.name "chocolate"; Attr.value "yes" ] ]
-        Elem.label [] [
-            Text.raw "No"
-            Elem.input [ Attr.typeRadio; Attr.name "chocolate"; Attr.value "no" ] ]
+    _fieldset [] [
+        _legend [] [ _text "Do you like chocolate?" ]
+        _label [] [
+            _text "Yes"
+            _input [ _typeRadio_; _name_ "chocolate"; _value_ "yes" ] ]
+        _label [] [
+            _text "No"
+            _input [ _typeRadio_; _name_ "chocolate"; _value_ "no" ] ]
     ]
 
-    Elem.fieldset [] [
-        Elem.legend [] [ Text.raw "Subscribe to our newsletter" ]
-        Elem.label [] [
-            Text.raw "Receive updates about product"
-            Elem.input [ Attr.typeCheckbox; Attr.name "newsletter"; Attr.value "product" ] ]
-        Elem.label [] [
-            Text.raw "Receive updates about company"
-            Elem.input [ Attr.typeCheckbox; Attr.name "newsletter"; Attr.value "company" ] ]
+    _fieldset [] [
+        _legend [] [ _text "Subscribe to our newsletter" ]
+        _label [] [
+            _text "Receive updates about product"
+            _input [ _typeCheckbox_; _name_ "newsletter"; _value_ "product" ] ]
+        _label [] [
+            _text "Receive updates about company"
+            _input [ _typeCheckbox_; _name_ "newsletter"; _value_ "company" ] ]
     ]
 
-    Elem.input [ Attr.typeSubmit ]
+    _input [ _typeSubmit_ ]
 ]
 ```
 
-A simple but useful _meta_-element `Elem.control` can reduce the verbosity required to create form outputs. The same form would look like:
+A simple but useful _meta_-element `_control` can reduce the verbosity required to create form outputs. The same form would look like:
 
 ```fsharp
-Elem.form [ Attr.method "post"; Attr.action "/submit" ] [
-    Elem.control "name" [] [ Text.raw "Name" ]
+_form [ _methodPost_; _action_ "/submit" ] [
+    _control "name" [] [ _text "Name" ]
 
-    Elem.controlTextarea "bio" [] [ Text.raw "Bio" ] []
+    _controlTextarea "bio" [] [ _text "Bio" ] []
 
-    Elem.controlSelect "hobbies" [ Attr.multiple ] [ Text.raw "Hobbies" ] [
-        Elem.option [ Attr.value "programming" ] [ Text.raw "Programming" ]
-        Elem.option [ Attr.value "diy" ] [ Text.raw "DIY" ]
-        Elem.option [ Attr.value "basketball" ] [ Text.raw "Basketball" ]
+    _controlSelect "hobbies" [ _multiple_ ] [ _text "Hobbies" ] [
+        _option [ _value_ "programming" ] [ _text "Programming" ]
+        _option [ _value_ "diy" ] [ _text "DIY" ]
+        _option [ _value_ "basketball" ] [ _text "Basketball" ]
     ]
 
-    Elem.fieldset [] [
-        Elem.legend [] [ Text.raw "Do you like chocolate?" ]
-        Elem.control "chocolate" [ Attr.id "chocolate_yes"; Attr.typeRadio ] [ Text.raw "yes" ]
-        Elem.control "chocolate" [ Attr.id "chocolate_no"; Attr.typeRadio ] [ Text.raw "no" ]
+    _fieldset [] [
+        _legend [] [ _text "Do you like chocolate?" ]
+        _control "chocolate" [ _id_ "chocolate_yes"; _typeRadio_ ] [ _text "yes" ]
+        _control "chocolate" [ _id_ "chocolate_no"; _typeRadio_ ] [ _text "no" ]
     ]
 
-    Elem.fieldset [] [
-        Elem.legend [] [ Text.raw "Subscribe to our newsletter" ]
-        Elem.control "newsletter" [ Attr.id "newsletter_product"; Attr.typeCheckbox ] [ Text.raw "Receive updates about product" ]
-        Elem.control "newsletter" [ Attr.id "newsletter_company"; Attr.typeCheckbox ] [ Text.raw "Receive updates about company" ]
+    _fieldset [] [
+        _legend [] [ _text "Subscribe to our newsletter" ]
+        _control "newsletter" [ _id_ "newsletter_product"; _typeCheckbox_ ] [ _text "Receive updates about product" ]
+        _control "newsletter" [ _id_ "newsletter_company"; _typeCheckbox_ ] [ _text "Receive updates about company" ]
     ]
 
-    Elem.input [ Attr.typeSubmit ]
+    _input [ _typeSubmit_ ]
 ]
 ```
 
 ### Attribute Value
 
-One of the more common places of sytanctic complexity is with `Attr.value` which expects, like all `Attr` functions, `string` input. Some helpers exist to simplify this.
+One of the more common places of sytanctic complexity is with `_value_` which expects, like all `Attr` functions, `string` input. Some helpers exist to simplify this.
 
 ```fsharp
 let dt = DateTime.Now
 
-Elem.input [ Attr.typeDate; Attr.valueStringf "yyyy-MM-dd" dt ]
+_input [ _typeDate_; _valueStringf_ "yyyy-MM-dd" dt ]
 
 // you could also just use:
-Elem.input [ Attr.typeDate; Attr.valueDate dt ] // formatted to ISO-8601 yyyy-MM-dd
+_input [ _typeDate_; _valueDate_ dt ] // formatted to ISO-8601 yyyy-MM-dd
 
 // or,
-Elem.input [ Attr.typeMonth; Attr.valueMonth dt ] // formatted to ISO-8601 yyyy-MM
+_input [ _typeMonth_; _valueMonth_ dt ] // formatted to ISO-8601 yyyy-MM
 
 // or,
-Elem.input [ Attr.typeWeek; Attr.valueWeek dt ] // formatted to Gregorian yyyy-W#
+_input [ _typeWeek_; _valueWeek_ dt ] // formatted to Gregorian yyyy-W#
 
 // it works for TimeSpan too:
 let ts = TimeSpan(12,12,0)
-Elem.input [ Attr.typeTime; Attr.valueTime ts ] // formatted to hh:mm
+_input [ _typeTime_; _valueTime_ ts ] // formatted to hh:mm
 
 // there is a helper for Option too:
 let someTs = Some ts
-Elem.input [ Attr.typeTime; Attr.valueOption Attr.valueTime someTs ]
+_input [ _typeTime_; _valueOption_ _valueTime_ someTs ]
 ```
 
 ### Merging Attributes
@@ -237,56 +246,56 @@ let heading (attrs : XmlAttribute list) (content : XmlNode list) =
     // safely combine the default XmlAttribute list with those provided
     // at runtime
     let attrs' =
-        Attr.merge [ Attr.class' "text-large" ] attrs
+        Attr.merge [ _class_ "text-large" ] attrs
 
-    Elem.div [] [
-        Elem.h1 [ attrs' ] content
+    _div [] [
+        _h1 [ attrs' ] content
     ]
 
 // Template
 let master (title : string) (content : XmlNode list) =
-    Elem.html [ Attr.lang "en" ] [
-        Elem.head [] [
-            Elem.title [] [ Text.raw title ]
+    _html [ _lang_ "en" ] [
+        _head [] [
+            _title [] [ _text title ]
         ]
-        Elem.body [] content
+        _body [] content
     ]
 
 // Views
 let homepage =
     master "Homepage" [
-        heading [ Attr.class' "red" ] [ Text.raw "Welcome to the homepage" ]
-        Text.p "Lorem ipsum dolor sit amet, consectetur adipiscing."
+        heading [ _class_ "red" ] [ _text "Welcome to the homepage" ]
+        _p' "Lorem ipsum dolor sit amet, consectetur adipiscing."
     ]
 
 let homepage =
     master "About Us" [
-        heading [ Attr.class' "purple" ] [ Text.raw "This is what we're all about" ]
-        Text.p "Lorem ipsum dolor sit amet, consectetur adipiscing."
+        heading [ _class_ "purple" ] [ _text "This is what we're all about" ]
+        _p' "Lorem ipsum dolor sit amet, consectetur adipiscing."
     ]
 ```
 
 ## Custom Elements & Attributes
 
-Every effort has been taken to ensure the HTML and SVG specs are mapped to functions in the module. In the event an element or attribute you need is missing, you can either file an [issue](https://github.com/FalcoFramework/Falco.Markup/issues), or more simply extend the module in your project.
+Every effort has been taken to ensure the HTML and SVG specs are mapped to functions in the module. In the event an element or attribute you need is missing, you can either file an [issue](https://github.com/pimbrouwers/Falco.Markup/issues), or more simply extend the module in your project.
 
 An example creating custom XML elements and using them to create a structured XML document:
 
 ```fsharp
 open Falco.Makrup
 
-module Elem =
-    let books = Elem.create "books"
-    let book = Elem.create "book"
-    let name = Elem.create "name"
+module XmlElem =
+    let books = Attr.create "books"
+    let book = Attr.create "book"
+    let name = Attr.create "name"
 
-module Attr =
+module XmlAttr =
     let soldOut = Attr.createBool "soldOut"
 
 let xmlDoc =
-    Elem.books [] [
-        Elem.book [ Attr.soldOut ] [
-            Elem.name [] [ Text.raw "To Kill A Mockingbird" ]
+    XmlElem.books [] [
+        XmlElem.book [ XmlAttr.soldOut ] [
+            XmlElem.name [] [ _text "To Kill A Mockingbird" ]
         ]
     ]
 
@@ -304,15 +313,15 @@ open Falco.Markup.Svg
 // https://developer.mozilla.org/en-US/docs/Web/SVG/Element/text#example
 let svgDrawing =
     Templates.svg (0, 0, 240, 80) [
-        Elem.style [] [
-            Text.raw ".small { font: italic 13px sans-serif; }"
-            Text.raw ".heavy { font: bold 30px sans-serif; }"
-            Text.raw ".Rrrrr { font: italic 40px serif; fill: red; }"
+        _style [] [
+            _text ".small { font: italic 13px sans-serif; }"
+            _text ".heavy { font: bold 30px sans-serif; }"
+            _text ".Rrrrr { font: italic 40px serif; fill: red; }"
         ]
-        Elem.text [ Attr.x "20"; Attr.y "35"; Attr.class' "small" ] [ Text.raw "My" ]
-        Elem.text [ Attr.x "40"; Attr.y "35"; Attr.class' "heavy" ] [ Text.raw "cat" ]
-        Elem.text [ Attr.x "55"; Attr.y "55"; Attr.class' "small" ] [ Text.raw "is" ]
-        Elem.text [ Attr.x "65"; Attr.y "55"; Attr.class' "Rrrrr" ] [ Text.raw "Grumpy!" ]
+        _text [ _x_ "20"; _y_ "35"; _class_ "small" ] [ _text "My" ]
+        _text [ _x_ "40"; _y_ "35"; _class_ "heavy" ] [ _text "cat" ]
+        _text [ _x_ "55"; _y_ "55"; _class_ "small" ] [ _text "is" ]
+        _text [ _x_ "65"; _y_ "55"; _class_ "Rrrrr" ] [ _text "Grumpy!" ]
     ]
 
 let svg = renderNode svgDrawing

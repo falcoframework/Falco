@@ -15,10 +15,10 @@
 <p>First we'll define a simple layout and enable htmx by including the script. Notice the strongly typed reference, <code>HtmxScript.cdnSrc</code>, which is provided by Falco.Htmx and resolves to the official CDN URL.</p>
 <pre><code class="language-fsharp">module View =
     let template content =
-        Elem.html [ Attr.lang &quot;en&quot; ] [
-            Elem.head [] [
-                Elem.script [ Attr.src HtmxScript.cdnSrc ] [] ]
-            Elem.body []
+        _html [ _lang &quot;en&quot; ] [
+            _head [] [
+                _script [ _src HtmxScript.cdnSrc ] [] ]
+            _body []
                 content ]
 </code></pre>
 <h2 id="components">Components</h2>
@@ -29,20 +29,20 @@
 
     module Components =
         let clicker =
-            Elem.button
+            _button
                 [ Hx.get &quot;/click&quot;
                   Hx.swapOuterHtml ]
-                [ Text.raw &quot;Click Me&quot; ]
+                [ _text &quot;Click Me&quot; ]
 
         let resetter =
-            Elem.div [ Attr.id &quot;wrapper&quot; ] [
-                Text.h2 &quot;Way to go! You clicked it!&quot;
-                Elem.br []
-                Elem.button
+            _div [ _id &quot;wrapper&quot; ] [
+                _h2' &quot;Way to go! You clicked it!&quot;
+                _br []
+                _button
                     [ Hx.get &quot;/reset&quot;
                       Hx.swapOuterHtml
                       Hx.targetCss &quot;#wrapper&quot; ]
-                    [ Text.raw &quot;Reset&quot; ] ]
+                    [ _text &quot;Reset&quot; ] ]
 </code></pre>
 <p>The <code>clicker</code> component is a simple button that will send a GET request to the server when clicked. The response will replace the button with the <code>resetter</code> component which will be rendered in the same location and can be used to restore the original state.</p>
 <h2 id="handlers">Handlers</h2>
@@ -51,7 +51,7 @@
     let handleIndex : HttpHandler =
         let html =
             View.template [
-                Text.h1 &quot;Example: Click &amp; Swap&quot;
+                _h1' &quot;Example: Click &amp; Swap&quot;
                 View.Components.clicker ]
 
         Response.ofHtml html

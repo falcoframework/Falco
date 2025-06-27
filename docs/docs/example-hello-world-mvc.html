@@ -44,24 +44,24 @@
 
     let layout content =
         Templates.html5 &quot;en&quot;
-            [ Elem.link [ Attr.href &quot;/style.css&quot;; Attr.rel &quot;stylesheet&quot; ] ]
+            [ _link [ _href_ &quot;/style.css&quot;; _rel_ &quot;stylesheet&quot; ] ]
             content
 
     module GreetingView =
         /// HTML view for /greet/html
         let detail greeting =
             layout [
-                Text.h1 $&quot;Hello {greeting.Name} from /html&quot;
-                Elem.hr []
-                Text.p &quot;Greet other ways:&quot;
-                Elem.nav [] [
-                    Elem.a
-                        [ Attr.href (Url.greetPlainText greeting.Name) ]
-                        [ Text.raw &quot;Greet in text&quot;]
-                    Text.raw &quot; | &quot;
-                    Elem.a
-                        [ Attr.href (Url.greetJson greeting.Name) ]
-                        [ Text.raw &quot;Greet in JSON &quot; ]
+                _h1' $&quot;Hello {greeting.Name} from /html&quot;
+                _hr []
+                _p' &quot;Greet other ways:&quot;
+                _nav [] [
+                    _a
+                        [ _href_ (Url.greetPlainText greeting.Name) ]
+                        [ _text &quot;Greet in text&quot;]
+                    _text &quot; | &quot;
+                    _a
+                        [ _href_ (Url.greetJson greeting.Name) ]
+                        [ _text &quot;Greet in JSON &quot; ]
                 ]
             ]
 </code></pre>
@@ -81,11 +81,11 @@
     module ErrorController =
         let notFound : HttpHandler =
             Response.withStatusCode 404 &gt;&gt;
-            Response.ofHtml (View.layout [ Text.h1 &quot;Not Found&quot; ])
+            Response.ofHtml (View.layout [ _h1' &quot;Not Found&quot; ])
 
         let serverException : HttpHandler =
             Response.withStatusCode 500 &gt;&gt;
-            Response.ofHtml (View.layout [ Text.h1 &quot;Server Error&quot; ])
+            Response.ofHtml (View.layout [ _h1' &quot;Server Error&quot; ])
 </code></pre>
 <p>Here we see the <a href="repsonse.html#response-modifiers"><code>HttpResponseModifier</code></a> at play, which set the status code before buffering out the HTML response. We'll reference these pages later when be <a href="#web-server">build the web server</a>.</p>
 <h2 id="controller">Controller</h2>
