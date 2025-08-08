@@ -183,7 +183,7 @@ module View =
         let releaseInfo =
             Elem.div [ Attr.class' "mb4 bt b--white-20 tc lh-solid" ] [
                 Elem.a [ Attr.href "https://www.nuget.org/packages/Falco"; Attr.class' "dib center ph1 ph4-l pv3 bg-merlot white no-underline ty--50"; Attr.targetBlank ]
-                    [ Text.raw "Latest release: 5.0.0 (January, 29, 2025)" ]
+                    [ Text.raw "Latest release: 5.0.2 (February, 26, 2025)" ]
             ]
 
         let benefits =
