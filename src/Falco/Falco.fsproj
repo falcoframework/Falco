@@ -39,7 +39,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Falco.Markup" Version="1.2.*" />
+    <PackageReference Include="Falco.Markup" Version="1.3.*" />
     <PackageReference Update="FSharp.Core" Version="6.0.0" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.*" PrivateAssets="All" />
   </ItemGroup>
