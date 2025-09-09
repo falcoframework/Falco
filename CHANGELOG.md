@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [5.0.3] - 2025-09-09
+
+### Added
+
+- Updated Falco.Markup to 1.3.0, which enables support for HTML fragment responses.
+
 ## [5.0.2] - 2025-06-26
 
 ### Fixed

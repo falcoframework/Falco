@@ -34,7 +34,7 @@ module View =
 
 A nice convention when working with Falco.Markup is to create a `Components` module within your `View` module. We'll define a few components here.
 
-All of the htmx attributes and properties are mapped within the `Hx` module. Wherever a limited scope of options exist, strongly typed references are provided. For example, `Hx.swapOuterHtml` is a strongly typed reference to the `hx-swap` attribute with the value `outerHTML`. This is a great way to avoid typos and ensure that your code is type-safe.
+All of the htmx attributes and properties are mapped within the `Hx` module. Wherever a limited scope of options exist, strongly typed references are provided. For example, `Hx.swapInnerHtml` is a strongly typed reference to the `hx-swap` attribute with the value `innerHTML`. This is a great way to avoid typos and ensure that your code is type-safe.
 
 ```fsharp
 module View =
@@ -42,19 +42,20 @@ module View =
 
     module Components =
         let clicker =
-            _button
-                [ Hx.get "/click"
-                  Hx.swapOuterHtml ]
+            _button [
+                Hx.get "/click"
+                Hx.swapInnerHtml
+                Hx.targetCss "#content" ]
                 [ _text "Click Me" ]
 
         let resetter =
-            _div [ _id "wrapper" ] [
+            Elem.createFragment [
                 _h2' "Way to go! You clicked it!"
                 _br []
-                _button
-                    [ Hx.get "/reset"
-                      Hx.swapOuterHtml
-                      Hx.targetCss "#wrapper" ]
+                _button [
+                    Hx.get "/reset"
+                    Hx.swapInnerHtml
+                    Hx.targetCss "#content" ]
                     [ _text "Reset" ] ]
 ```
 
@@ -70,7 +71,8 @@ module App =
         let html =
             View.template [
                 _h1' "Example: Click & Swap"
-                View.Components.clicker ]
+                _div [ _id_ "content" ] [
+                    View.Components.clicker ] ]
 
         Response.ofHtml html
 

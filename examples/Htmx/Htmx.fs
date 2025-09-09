@@ -10,24 +10,24 @@ module View =
         _html [ _lang_ "en" ] [
             _head [] [
                 _script [ _src_ HtmxScript.cdnSrc ] [] ]
-            _body []
-                content ]
+            _body [] content ]
 
     module Components =
         let clicker =
-            _button
-                [ Hx.get "/click"
-                  Hx.swapOuterHtml ]
+            _button [
+                Hx.get "/click"
+                Hx.swapInnerHtml
+                Hx.targetCss "#content" ]
                 [ _text "Click Me" ]
 
         let resetter =
-            _div [ _id_ "wrapper" ] [
+            Elem.createFragment [
                 _h2' "Way to go! You clicked it!"
                 _br []
-                _button
-                    [ Hx.get "/reset"
-                      Hx.swapOuterHtml
-                      Hx.targetCss "#wrapper" ]
+                _button [
+                    Hx.get "/reset"
+                    Hx.swapInnerHtml
+                    Hx.targetCss "#content" ]
                     [ _text "Reset" ] ]
 
 module App =
@@ -35,7 +35,8 @@ module App =
         let html =
             View.template [
                 _h1' "Example: Click & Swap"
-                View.Components.clicker ]
+                _div [ _id_ "content" ] [
+                    View.Components.clicker ] ]
 
         Response.ofHtml html
 

@@ -161,7 +161,14 @@ let ofHtmlString
 /// Returns a "text/html; charset=utf-8" response with provided HTML to client.
 let ofHtml
     (html : XmlNode) : HttpHandler =
-    ofHtmlString (renderHtml html)
+    let render =
+        match html with
+        | NodeList _ -> renderNode
+        | SelfClosingNode _
+        | ParentNode _
+        | TextNode _ -> renderHtml
+
+    ofHtmlString (render html)
 
 /// Returns a CSRF token-dependant "text/html; charset=utf-8" response with
 /// provided HTML to client.

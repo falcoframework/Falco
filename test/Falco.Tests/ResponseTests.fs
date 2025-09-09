@@ -178,9 +178,9 @@ let ``Response.ofHtml produces text/html result`` () =
     let expected = "<!DOCTYPE html><html><div class=\"my-class\"><h1>hello</h1></div></html>"
 
     let doc =
-        Elem.html [] [
-                Elem.div [ Attr.class' "my-class" ] [
-                        Elem.h1 [] [ Text.raw "hello" ]
+        _html [] [
+                _div [ _class_ "my-class" ] [
+                        _h1 [] [ _text "hello" ]
                     ]
             ]
 
@@ -196,6 +196,30 @@ let ``Response.ofHtml produces text/html result`` () =
         contentLength |> should equal (int64 (Encoding.UTF8.GetByteCount(expected)))
         contentType   |> should equal "text/html; charset=utf-8"
     }
+
+[<Fact>]
+let ``Response.ofHtml products text/html for fragment`` () =
+    let ctx = getHttpContextWriteable false
+    let expected = "<div>1</div><div>2</div><div>3</div>"
+
+    let fragment =
+        Elem.createFragment [
+            _div [] [ _text "1" ]
+            _div [] [ _text "2" ]
+            _div [] [ _text "3" ]
+        ]
+
+    task {
+        do! ctx |> Response.ofHtml fragment
+        let! body = getResponseBody ctx
+        let contentLength = ctx.Response.ContentLength
+        let contentType = ctx.Response.Headers.[HeaderNames.ContentType][0]
+
+        body          |> should equal expected
+        contentLength |> should equal (int64 (Encoding.UTF8.GetByteCount(expected)))
+        contentType   |> should equal "text/html; charset=utf-8"
+    }
+
 
 [<Fact>]
 let ``Response.ofHtmlString produces text/html result`` () =
