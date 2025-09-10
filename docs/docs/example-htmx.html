@@ -23,25 +23,26 @@
 </code></pre>
 <h2 id="components">Components</h2>
 <p>A nice convention when working with Falco.Markup is to create a <code>Components</code> module within your <code>View</code> module. We'll define a few components here.</p>
-<p>All of the htmx attributes and properties are mapped within the <code>Hx</code> module. Wherever a limited scope of options exist, strongly typed references are provided. For example, <code>Hx.swapOuterHtml</code> is a strongly typed reference to the <code>hx-swap</code> attribute with the value <code>outerHTML</code>. This is a great way to avoid typos and ensure that your code is type-safe.</p>
+<p>All of the htmx attributes and properties are mapped within the <code>Hx</code> module. Wherever a limited scope of options exist, strongly typed references are provided. For example, <code>Hx.swapInnerHtml</code> is a strongly typed reference to the <code>hx-swap</code> attribute with the value <code>innerHTML</code>. This is a great way to avoid typos and ensure that your code is type-safe.</p>
 <pre><code class="language-fsharp">module View =
     // Layout ...
 
     module Components =
         let clicker =
-            _button
-                [ Hx.get &quot;/click&quot;
-                  Hx.swapOuterHtml ]
+            _button [
+                Hx.get &quot;/click&quot;
+                Hx.swapInnerHtml
+                Hx.targetCss &quot;#content&quot; ]
                 [ _text &quot;Click Me&quot; ]
 
         let resetter =
-            _div [ _id &quot;wrapper&quot; ] [
+            Elem.createFragment [
                 _h2' &quot;Way to go! You clicked it!&quot;
                 _br []
-                _button
-                    [ Hx.get &quot;/reset&quot;
-                      Hx.swapOuterHtml
-                      Hx.targetCss &quot;#wrapper&quot; ]
+                _button [
+                    Hx.get &quot;/reset&quot;
+                    Hx.swapInnerHtml
+                    Hx.targetCss &quot;#content&quot; ]
                     [ _text &quot;Reset&quot; ] ]
 </code></pre>
 <p>The <code>clicker</code> component is a simple button that will send a GET request to the server when clicked. The response will replace the button with the <code>resetter</code> component which will be rendered in the same location and can be used to restore the original state.</p>
@@ -52,7 +53,8 @@
         let html =
             View.template [
                 _h1' &quot;Example: Click &amp; Swap&quot;
-                View.Components.clicker ]
+                _div [ _id_ &quot;content&quot; ] [
+                    View.Components.clicker ] ]
 
         Response.ofHtml html
 
