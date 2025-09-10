@@ -2,11 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [5.1.0] - 2025-09-09
+
+### Added
+
+- `Response.ofFragment` and `Response.ofFragmentCsrf` to return HTML fragments by element ID, with optional CSRF token support.
+- `Falco.Markup` [version 1.4.0](https://www.nuget.org/packages/Falco.Markup/1.4.0), which reverted API to 1.2.0 and provided correct support for template fragments.
+
 ## [5.0.3] - 2025-09-09
 
 ### Added
 
-- Updated Falco.Markup to 1.3.0, which enables support for HTML fragment responses.
+- `Falco.Markup` [version 1.3.0](https://www.nuget.org/packages/Falco.Markup/1.3.0), which enables support for template fragment responses.
 
 ## [5.0.2] - 2025-06-26
 

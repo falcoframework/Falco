@@ -15,13 +15,12 @@ module Xsrf =
             Attr.name token.FormFieldName
             Attr.value token.RequestToken ]
 
-    /// Generates a CSRF token using the Microsoft.AspNetCore.Antiforgery
-    /// package.
+    /// Generates an antiforgery token and stores it in the user's cookies.
     let getToken (ctx : HttpContext) : AntiforgeryTokenSet =
         let antiFrg = ctx.RequestServices.GetRequiredService<IAntiforgery>()
         antiFrg.GetAndStoreTokens ctx
 
-    /// Validates the Antiforgery token within the provided HttpContext.
+    /// Validates the antiforgery token within the provided HttpContext.
     let validateToken (ctx : HttpContext) : Task<bool> =
         let antiFrg = ctx.RequestServices.GetRequiredService<IAntiforgery>()
         antiFrg.IsRequestValidAsync ctx

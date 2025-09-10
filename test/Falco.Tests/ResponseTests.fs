@@ -198,30 +198,6 @@ let ``Response.ofHtml produces text/html result`` () =
     }
 
 [<Fact>]
-let ``Response.ofHtml products text/html for fragment`` () =
-    let ctx = getHttpContextWriteable false
-    let expected = "<div>1</div><div>2</div><div>3</div>"
-
-    let fragment =
-        Elem.createFragment [
-            _div [] [ _text "1" ]
-            _div [] [ _text "2" ]
-            _div [] [ _text "3" ]
-        ]
-
-    task {
-        do! ctx |> Response.ofHtml fragment
-        let! body = getResponseBody ctx
-        let contentLength = ctx.Response.ContentLength
-        let contentType = ctx.Response.Headers.[HeaderNames.ContentType][0]
-
-        body          |> should equal expected
-        contentLength |> should equal (int64 (Encoding.UTF8.GetByteCount(expected)))
-        contentType   |> should equal "text/html; charset=utf-8"
-    }
-
-
-[<Fact>]
 let ``Response.ofHtmlString produces text/html result`` () =
     let ctx = getHttpContextWriteable false
 
@@ -251,4 +227,27 @@ let ``Response.challengeAndRedirect`` () =
         ctx.Response.StatusCode |> should equal 401
         ctx.Response.Headers.WWWAuthenticate.ToArray() |> should contain AuthScheme
         ctx.Response.Headers.Location.ToArray() |> should contain "/"
+    }
+
+[<Fact>]
+let ``Response.ofFragment returns the specified fragment`` () =
+    let ctx = getHttpContextWriteable false
+    let expected = """<div id="fragment1">1</div>"""
+
+    let html =
+        Elem.div [] [
+            _div [ _id_ "fragment1" ] [ _text "1" ]
+            _div [ _id_ "fragment2" ] [ _text "2" ]
+        ]
+
+    task {
+        do! ctx |> Response.ofFragment "fragment1" html
+
+        let! body = getResponseBody ctx
+        let contentLength = ctx.Response.ContentLength
+        let contentType = ctx.Response.Headers.[HeaderNames.ContentType][0]
+
+        body          |> should equal expected
+        contentLength |> should equal (int64 (Encoding.UTF8.GetByteCount(expected)))
+        contentType   |> should equal "text/html; charset=utf-8"
     }

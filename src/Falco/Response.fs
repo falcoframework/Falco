@@ -161,24 +161,33 @@ let ofHtmlString
 /// Returns a "text/html; charset=utf-8" response with provided HTML to client.
 let ofHtml
     (html : XmlNode) : HttpHandler =
-    let render =
-        match html with
-        | NodeList _ -> renderNode
-        | SelfClosingNode _
-        | ParentNode _
-        | TextNode _ -> renderHtml
+    ofHtmlString (renderHtml html)
 
-    ofHtmlString (render html)
+let private withCsrfToken handleToken : HttpHandler = fun ctx ->
+    let csrfToken = Xsrf.getToken ctx
+    handleToken csrfToken ctx
 
 /// Returns a CSRF token-dependant "text/html; charset=utf-8" response with
 /// provided HTML to client.
 let ofHtmlCsrf
     (view : AntiforgeryTokenSet -> XmlNode) : HttpHandler =
-    let withCsrfToken handleToken : HttpHandler = fun ctx ->
-        let csrfToken = Xsrf.getToken ctx
-        handleToken csrfToken ctx
-
     withCsrfToken (fun token -> token |> view |> ofHtml)
+
+/// Returns a "text/html; charset=utf-8" response with provided HTML fragment,
+/// if found, to client. If no element with the provided id is found, an empty
+/// string is returned.
+let ofFragment
+    (id : string)
+    (html : XmlNode) : HttpHandler =
+    ofHtmlString (renderFragment html id)
+
+/// Returns a CSRF token-dependant "text/html; charset=utf-8" response with
+/// provided HTML fragment, if found, to client. If no element with the
+/// provided id is found, an empty string is returned.
+let ofFragmentCsrf
+    (id : string)
+    (view : AntiforgeryTokenSet -> XmlNode) : HttpHandler =
+    withCsrfToken (fun token -> token |> view |> ofFragment id)
 
 /// Returns an optioned "application/json; charset=utf-8" response with the
 /// serialized object provided to the client.
