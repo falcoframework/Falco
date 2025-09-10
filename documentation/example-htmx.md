@@ -23,43 +23,54 @@ First we'll define a simple layout and enable htmx by including the script. Noti
 ```fsharp
 module View =
     let template content =
-        _html [ _lang "en" ] [
+        _html [ _lang_ "en" ] [
             _head [] [
-                _script [ _src HtmxScript.cdnSrc ] [] ]
-            _body []
-                content ]
+                _script [ _src_ HtmxScript.cdnSrc ] [] ]
+            _body [] content ]
 ```
 
-## Components
-
-A nice convention when working with Falco.Markup is to create a `Components` module within your `View` module. We'll define a few components here.
-
-All of the htmx attributes and properties are mapped within the `Hx` module. Wherever a limited scope of options exist, strongly typed references are provided. For example, `Hx.swapInnerHtml` is a strongly typed reference to the `hx-swap` attribute with the value `innerHTML`. This is a great way to avoid typos and ensure that your code is type-safe.
+With our layout defined, we can create a view to represent our starting state.
 
 ```fsharp
 module View =
     // Layout ...
 
-    module Components =
-        let clicker =
-            _button [
-                Hx.get "/click"
-                Hx.swapInnerHtml
-                Hx.targetCss "#content" ]
-                [ _text "Click Me" ]
+    let clickAndSwap =
+        template [
+            _h1' "Example: Click & Swap"
+            _div [ _id_ "content" ] [
+                _button [
+                    _id_ "clicker"
+                    Hx.get "/click"
+                    Hx.swapOuterHtml ]
+                    [ _text "Click Me" ] ] ]
+```
 
+This view contains a button that, when clicked, will send a GET request to the `/click` endpoint. The response from that request will replace the button with the response from the server.
+
+## Components
+
+A nice convention when working with Falco.Markup is to create a `Components` module within your `View` module. We'll define one component here.
+
+All of the htmx attributes and properties are mapped within the `Hx` module. Wherever a limited scope of options exist, strongly typed references are provided. For example, `Hx.swapInnerHtml` is a strongly typed reference to the `hx-swap` attribute with the value `innerHTML`. This is a great way to avoid typos and ensure that your code is type-safe.
+
+```fsharp
+module View =
+    // Layout & view ...
+
+    module Components =
         let resetter =
-            Elem.createFragment [
+            _div [ _id_ "resetter" ] [
                 _h2' "Way to go! You clicked it!"
                 _br []
                 _button [
                     Hx.get "/reset"
-                    Hx.swapInnerHtml
-                    Hx.targetCss "#content" ]
+                    Hx.swapOuterHtml
+                    Hx.targetCss "#resetter" ]
                     [ _text "Reset" ] ]
 ```
 
-The `clicker` component is a simple button that will send a GET request to the server when clicked. The response will replace the button with the `resetter` component which will be rendered in the same location and can be used to restore the original state.
+The `resetter` component is a simple button that will send a GET request to the server when clicked. The response will replace the entire `div` with the ID of `resetter` with the response from the server.
 
 ## Handlers
 
@@ -68,43 +79,34 @@ Next we define a couple basic handlers to handle the requests for the original d
 ```fsharp
 module App =
     let handleIndex : HttpHandler =
-        let html =
-            View.template [
-                _h1' "Example: Click & Swap"
-                _div [ _id_ "content" ] [
-                    View.Components.clicker ] ]
-
-        Response.ofHtml html
+        Response.ofHtml View.clickAndSwap
 
     let handleClick : HttpHandler =
         Response.ofHtml View.Components.resetter
 
     let handleReset : HttpHandler =
-        Response.ofHtml View.Components.clicker
+        Response.ofFragment "clicker" View.clickAndSwap
 ```
 
-You can see that the `handleClick` and `handleReset` handlers are simply returning the `resetter` and `clicker` components respectively. The `handleIndex` handler is returning the full HTML document with the `clicker` component.
+The `handleIndex` handler is returning our full click-and-swap view, containing the clicker button. Clicking it triggers a request to the `handleClick` handler, which returns the resetter component. Clicking the reset button triggers a request to the `handleReset` handler, which returns the original clicker button as a [template fragment], extracted from the same view as the original state.
 
 ## Web Server
 
 To finish things off, we'll map our handlers to the expected routes and initialize the web server.
 
 ```fsharp
-[<EntryPoint>]
-let main args =
-    let wapp = WebApplication.Create()
+let wapp = WebApplication.Create()
 
-    let endpoints =
-        [
-            get "/" App.handleIndex
-            get "/click" App.handleClick
-            get "/reset" App.handleReset
-        ]
+let endpoints =
+    [
+        get "/" App.handleIndex
+        get "/click" App.handleClick
+        get "/reset" App.handleReset
+    ]
 
-    wapp.UseRouting()
-        .UseFalco(endpoints)
-        .Run()
-    0 // Exit code
+wapp.UseRouting()
+    .UseFalco(endpoints)
+    .Run()
 ```
 
 ## Wrapping Up
