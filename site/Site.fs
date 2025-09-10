@@ -191,9 +191,9 @@ module View =
                 _div [ _class_ "fl-l mw5 mw-none-l w-25-l center mb4 ph4-l br-l b--white-20" ] [
                     _img [ _src_ "/icons/fast.svg"; _class_ "w4 o-90" ]
                     _h3 [ _class_ "mv2 white" ]
-                        [ _text "Blazing Fast" ]
+                        [ _text "Fast & Lightweight" ]
                     _div [ _class_ "mb3 white-90" ]
-                        [ _text "Built upon core ASP.NET components." ]
+                        [ _text "Optimized for speed and low memory usage." ]
                     _a [ _href_ "https://web-frameworks-benchmark.netlify.app/result?l=fsharp"; _targetBlank_; _class_ "dib mh2 pa2 f6 white ba b--white br2 no-underline" ]
                         [ _text "Learn More" ]
                  ]
@@ -201,7 +201,7 @@ module View =
                 _div [ _class_ "fl-l mw5 mw-none-l w-25-l center mb4 ph4-l br-l b--white-20" ] [
                     _img [ _src_ "/icons/easy.svg"; _class_ "w4 o-90" ]
                     _h3 [ _class_ "mv2 white" ] [ _text "Easy to Learn" ]
-                    _div [ _class_ "mb3 white-90" ] [ _text "Designed for getting up to speed quickly." ]
+                    _div [ _class_ "mb3 white-90" ] [ _text "Simple, predictable, and easy to pick up." ]
                     _a [ _href_ "/docs/get-started.html"; _title_ "Learn how to get started using Falco"; _class_ "dib mh2 pa2 f6 white ba b--white br2 no-underline" ]
                         [ _text "Get Started" ]
                  ]
@@ -216,8 +216,8 @@ module View =
 
                 _div [ _class_ "fl-l mw5 mw-none-l w-25-l center mb4 ph4-l" ] [
                     _img [ _src_ "/icons/integrate.svg"; _class_ "w4 o-90" ]
-                    _h3 [ _class_ "mv2 white" ] [ _text "Extensible" ]
-                    _div [ _class_ "mb3 white-90" ] [ _text "Seamlessly integrates with existing libraries." ]
+                    _h3 [ _class_ "mv2 white" ] [ _text "Customizable" ]
+                    _div [ _class_ "mb3 white-90" ] [ _text "Seamlessly integrates with ASP.NET." ]
                     _a [ _href_ "https://github.com/FalcoFramework/Falco/tree/master/samples/ScribanExample"; _targetBlank_; _title_ "Example of incorporating a third-party view engine"; _class_ "dib mh2 pa2 f6 white ba b--white br2 no-underline" ]
                         [ _text "Explore How" ]
                  ]
@@ -310,9 +310,10 @@ let main args =
     printfn "Rendering homepage..."
     let indexMarkdown = Path.Join(workingDir.FullName, "../README.md") |> File.ReadAllText
     let mainContent = Markdown.render indexMarkdown
-
+    let mainWithoutTitle =
+        Regex.Replace(mainContent.Body, "<h1.*?</h1>", "", RegexOptions.Singleline).Trim()
     { Title = String.Empty
-      MainContent = mainContent.Body }
+      MainContent = mainWithoutTitle }
     |> View.layout
     |> renderHtml
     |> fun text -> File.WriteAllText(Path.Join(buildDirPath.FullName, "index.html"), text)

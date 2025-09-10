@@ -2,9 +2,9 @@
   --gray: rgba(51,51,51,.6);
   --silver: rgb(204, 204, 204);
   --slate: rgb(51, 51, 51);
-  --merlot: rgb(50, 1, 79);
-  --purple: rgb(184, 69, 252);
-  --washed-purple: rgba(185, 69, 252, 0.10);
+  --merlot: rgb(59, 3, 109);
+  --purple: rgb(120, 60, 180);
+  --washed-purple: rgba(120, 60, 180, 0.17);
 }
 
 /* sizing */
