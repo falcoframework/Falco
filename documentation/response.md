@@ -50,6 +50,22 @@ let htmlHandler : HttpHandler =
     Response.ofHtmlString "<html>...</html>"
 ```
 
+## Template Fragments
+
+If you want to return a [fragment of HTML](https://htmx.org/essays/template-fragments/), for example when working with [htmx](https://htmx.org/), you can use `Response.ofFragment` (or `Response.ofFragmentCsrf`). This function takes an element ID as its first argument, and a `XmlNode` as its second argument. The server will return only the contents of the node with the specified ID.
+
+```fsharp
+let fragmentHandler : HttpHandler =
+    let html =
+        _div [ _id_ "greeting" ] [
+            _h1 [ _id_ "heading" ] [ _text "Hello, World!" ]
+        ]
+
+    Response.ofFragment "heading" html
+```
+
+This will return only the contents of the `h1` element, i.e. `<h1 id="heading">Hello, World!</h1>`. In the case of multiple elements with the same ID, the first one found will be returned. If no element with the specified ID is found, an empty response will be returned.
+
 ## JSON responses
 
 These handlers use the .NET built-in `System.Text.Json.JsonSerializer`.

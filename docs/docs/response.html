@@ -41,6 +41,17 @@ let secureHtmlHandler : HttpHandler =
 <pre><code class="language-fsharp">let htmlHandler : HttpHandler =
     Response.ofHtmlString &quot;&lt;html&gt;...&lt;/html&gt;&quot;
 </code></pre>
+<h2 id="template-fragments">Template Fragments</h2>
+<p>If you want to return a <a href="https://htmx.org/essays/template-fragments/">fragment of HTML</a>, for example when working with <a href="https://htmx.org/">htmx</a>, you can use <code>Response.ofFragment</code> (or <code>Response.ofFragmentCsrf</code>). This function takes an element ID as its first argument, and a <code>XmlNode</code> as its second argument. The server will return only the contents of the node with the specified ID.</p>
+<pre><code class="language-fsharp">let fragmentHandler : HttpHandler =
+    let html =
+        _div [ _id_ &quot;greeting&quot; ] [
+            _h1 [ _id_ &quot;heading&quot; ] [ _text &quot;Hello, World!&quot; ]
+        ]
+
+    Response.ofFragment &quot;heading&quot; html
+</code></pre>
+<p>This will return only the contents of the <code>h1</code> element, i.e. <code>&lt;h1 id=&quot;heading&quot;&gt;Hello, World!&lt;/h1&gt;</code>. In the case of multiple elements with the same ID, the first one found will be returned. If no element with the specified ID is found, an empty response will be returned.</p>
 <h2 id="json-responses">JSON responses</h2>
 <p>These handlers use the .NET built-in <code>System.Text.Json.JsonSerializer</code>.</p>
 <pre><code class="language-fsharp">type Person =

@@ -15,73 +15,71 @@
 <p>First we'll define a simple layout and enable htmx by including the script. Notice the strongly typed reference, <code>HtmxScript.cdnSrc</code>, which is provided by Falco.Htmx and resolves to the official CDN URL.</p>
 <pre><code class="language-fsharp">module View =
     let template content =
-        _html [ _lang &quot;en&quot; ] [
+        _html [ _lang_ &quot;en&quot; ] [
             _head [] [
-                _script [ _src HtmxScript.cdnSrc ] [] ]
-            _body []
-                content ]
+                _script [ _src_ HtmxScript.cdnSrc ] [] ]
+            _body [] content ]
 </code></pre>
-<h2 id="components">Components</h2>
-<p>A nice convention when working with Falco.Markup is to create a <code>Components</code> module within your <code>View</code> module. We'll define a few components here.</p>
-<p>All of the htmx attributes and properties are mapped within the <code>Hx</code> module. Wherever a limited scope of options exist, strongly typed references are provided. For example, <code>Hx.swapInnerHtml</code> is a strongly typed reference to the <code>hx-swap</code> attribute with the value <code>innerHTML</code>. This is a great way to avoid typos and ensure that your code is type-safe.</p>
+<p>With our layout defined, we can create a view to represent our starting state.</p>
 <pre><code class="language-fsharp">module View =
     // Layout ...
 
-    module Components =
-        let clicker =
-            _button [
-                Hx.get &quot;/click&quot;
-                Hx.swapInnerHtml
-                Hx.targetCss &quot;#content&quot; ]
-                [ _text &quot;Click Me&quot; ]
+    let clickAndSwap =
+        template [
+            _h1' &quot;Example: Click &amp; Swap&quot;
+            _div [ _id_ &quot;content&quot; ] [
+                _button [
+                    _id_ &quot;clicker&quot;
+                    Hx.get &quot;/click&quot;
+                    Hx.swapOuterHtml ]
+                    [ _text &quot;Click Me&quot; ] ] ]
+</code></pre>
+<p>This view contains a button that, when clicked, will send a GET request to the <code>/click</code> endpoint. The response from that request will replace the button with the response from the server.</p>
+<h2 id="components">Components</h2>
+<p>A nice convention when working with Falco.Markup is to create a <code>Components</code> module within your <code>View</code> module. We'll define one component here.</p>
+<p>All of the htmx attributes and properties are mapped within the <code>Hx</code> module. Wherever a limited scope of options exist, strongly typed references are provided. For example, <code>Hx.swapInnerHtml</code> is a strongly typed reference to the <code>hx-swap</code> attribute with the value <code>innerHTML</code>. This is a great way to avoid typos and ensure that your code is type-safe.</p>
+<pre><code class="language-fsharp">module View =
+    // Layout &amp; view ...
 
+    module Components =
         let resetter =
-            Elem.createFragment [
+            _div [ _id_ &quot;resetter&quot; ] [
                 _h2' &quot;Way to go! You clicked it!&quot;
                 _br []
                 _button [
                     Hx.get &quot;/reset&quot;
-                    Hx.swapInnerHtml
-                    Hx.targetCss &quot;#content&quot; ]
+                    Hx.swapOuterHtml
+                    Hx.targetCss &quot;#resetter&quot; ]
                     [ _text &quot;Reset&quot; ] ]
 </code></pre>
-<p>The <code>clicker</code> component is a simple button that will send a GET request to the server when clicked. The response will replace the button with the <code>resetter</code> component which will be rendered in the same location and can be used to restore the original state.</p>
+<p>The <code>resetter</code> component is a simple button that will send a GET request to the server when clicked. The response will replace the entire <code>div</code> with the ID of <code>resetter</code> with the response from the server.</p>
 <h2 id="handlers">Handlers</h2>
 <p>Next we define a couple basic handlers to handle the requests for the original document and ajax requests.</p>
 <pre><code class="language-fsharp">module App =
     let handleIndex : HttpHandler =
-        let html =
-            View.template [
-                _h1' &quot;Example: Click &amp; Swap&quot;
-                _div [ _id_ &quot;content&quot; ] [
-                    View.Components.clicker ] ]
-
-        Response.ofHtml html
+        Response.ofHtml View.clickAndSwap
 
     let handleClick : HttpHandler =
         Response.ofHtml View.Components.resetter
 
     let handleReset : HttpHandler =
-        Response.ofHtml View.Components.clicker
+        Response.ofFragment &quot;clicker&quot; View.clickAndSwap
 </code></pre>
-<p>You can see that the <code>handleClick</code> and <code>handleReset</code> handlers are simply returning the <code>resetter</code> and <code>clicker</code> components respectively. The <code>handleIndex</code> handler is returning the full HTML document with the <code>clicker</code> component.</p>
+<p>The <code>handleIndex</code> handler is returning our full click-and-swap view, containing the clicker button. Clicking it triggers a request to the <code>handleClick</code> handler, which returns the resetter component. Clicking the reset button triggers a request to the <code>handleReset</code> handler, which returns the original clicker button as a [template fragment], extracted from the same view as the original state.</p>
 <h2 id="web-server">Web Server</h2>
 <p>To finish things off, we'll map our handlers to the expected routes and initialize the web server.</p>
-<pre><code class="language-fsharp">[&lt;EntryPoint&gt;]
-let main args =
-    let wapp = WebApplication.Create()
+<pre><code class="language-fsharp">let wapp = WebApplication.Create()
 
-    let endpoints =
-        [
-            get &quot;/&quot; App.handleIndex
-            get &quot;/click&quot; App.handleClick
-            get &quot;/reset&quot; App.handleReset
-        ]
+let endpoints =
+    [
+        get &quot;/&quot; App.handleIndex
+        get &quot;/click&quot; App.handleClick
+        get &quot;/reset&quot; App.handleReset
+    ]
 
-    wapp.UseRouting()
-        .UseFalco(endpoints)
-        .Run()
-    0 // Exit code
+wapp.UseRouting()
+    .UseFalco(endpoints)
+    .Run()
 </code></pre>
 <h2 id="wrapping-up">Wrapping Up</h2>
 <p>That's it! You now have a simple web application that uses htmx to swap out components on the page without a full page reload. This is just the beginning of what you can do with htmx and Falco. You can use the same principles to create more complex interactions and components.</p>
