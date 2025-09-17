@@ -5,7 +5,7 @@
 The easiest way to get started with Falco is by installing the `Falco.Template` package, which adds a new template to your `dotnet new` command line tool:
 
 ```shell
-> dotnet new -i "Falco.Template::*"
+> dotnet new install "Falco.Template::*"
 ```
 
 Afterwards you can create a new Falco application by running:
