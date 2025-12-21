@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Donald" Version="10.*" />
-    <PackageReference Include="System.Data.SQLite" Version="1.*" />
+    <PackageReference Include="System.Data.SQLite" Version="2.*" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Falco/Falco.fsproj" />

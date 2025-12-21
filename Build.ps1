@@ -20,17 +20,17 @@ function RunCommand {
 }
 
 $rootDir = $PSScriptRoot
-$srcDir = Join-Path -Path $rootDir -ChildPath 'src'
-$testDir = Join-Path -Path $rootDir -ChildPath 'test'
-$docsOutputDir = Join-Path -Path $rootDir -ChildPath 'docs'
+$srcDir = Join-Path $rootDir 'src'
+$testDir = Join-Path $rootDir 'test'
+$docsOutputDir = Join-Path $rootDir 'docs'
 
 switch ($Action) {
-    "Test"            { $projectdir = Join-Path -Path $testDir -ChildPath 'Falco.Tests' }
-    "IntegrationTest" { $projectdir = Join-Path -Path $testDir -ChildPath 'Falco.IntegrationTests' }
-    "Pack"            { $projectDir = Join-Path -Path $srcDir -ChildPath 'Falco' }
-    "BuildSite"       { $projectDir = Join-Path -Path $rootDir -ChildPath 'site' }
-    "DevelopSite"     { $projectDir = Join-Path -Path $rootDir -ChildPath 'site' }
-    Default           { $projectDir = Join-Path -Path $srcDir -ChildPath 'Falco' }
+    "Test"            { $projectdir = Join-Path $testDir 'Falco.Tests' }
+    "IntegrationTest" { $projectdir = Join-Path $testDir 'Falco.IntegrationTests' }
+    "Pack"            { $projectDir = Join-Path $srcDir 'Falco' }
+    "BuildSite"       { $projectDir = Join-Path $rootDir 'site' }
+    "DevelopSite"     { $projectDir = Join-Path $rootDir 'site' }
+    Default           { $projectDir = Join-Path $srcDir 'Falco' }
 }
 
 if(!$NoRestore.IsPresent) {
