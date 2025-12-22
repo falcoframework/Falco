@@ -19,6 +19,7 @@ type LayoutTwoColModel =
 type ParsedMarkdownDocument =
     { Title : string
       Body  : string }
+
 module Markdown =
     let render (markdown : string) : ParsedMarkdownDocument =
         // Render Markdown as HTML
@@ -183,7 +184,7 @@ module View =
         let releaseInfo =
             _div [ _class_ "mb4 bt b--white-20 tc lh-solid" ] [
                 _a [ _href_ "https://www.nuget.org/packages/Falco"; _class_ "dib center ph1 ph4-l pv3 bg-merlot white no-underline ty--50"; _targetBlank_ ]
-                    [ _text "Latest release: 5.1.0 (September, 9, 2025)" ]
+                    [ _text "Latest release: 5.2.0 (December, 21, 2025)" ]
             ]
 
         let benefits =
@@ -298,8 +299,8 @@ let main args =
     let workingDir = DirectoryInfo(if args.Length = 2 then args[1] else args[0])
 
     // Clean build
-    printfn "Clearing build directory..."
     let buildDirPath = DirectoryInfo(Path.Join(workingDir.FullName, "../docs"))
+    printfn "Clearing build directory...\n  %s" buildDirPath.FullName
 
     if buildDirPath.Exists then
         for file in buildDirPath.EnumerateFiles("*.html", EnumerationOptions(RecurseSubdirectories = true)) do
@@ -318,12 +319,10 @@ let main args =
     |> renderHtml
     |> fun text -> File.WriteAllText(Path.Join(buildDirPath.FullName, "index.html"), text)
 
-    printfn "Rendering docs..."
     let docsDir = DirectoryInfo(Path.Join(workingDir.FullName, "../documentation"))
-    let docsBuildDir = DirectoryInfo(Path.Join(buildDirPath.FullName, "docs"))
-    let readme = FileInfo(Path.Join(workingDir.FullName, "../readme.md"))
-    let docFiles = Array.append [|readme|] (docsDir.GetFiles("*.md"))
-    Docs.build docFiles docsBuildDir
+    let docsBuildDir = DirectoryInfo(Path.Join(buildDirPath.FullName, "../docs/docs"))
+    printfn "Rendering docs...\n  From: %s\n  To:   %s" docsDir.FullName docsBuildDir.FullName
+    Docs.build (docsDir.GetFiles "*.md") docsBuildDir
 
     // Additional languages
     let languageCodes = []

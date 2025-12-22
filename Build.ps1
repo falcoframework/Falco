@@ -45,7 +45,7 @@ switch ($Action) {
     "Test"            { RunCommand "dotnet test `"$projectDir`"" }
     "IntegrationTest" { RunCommand "dotnet test `"$projectDir`"" }
     "Pack"            { RunCommand "dotnet pack `"$projectDir`" -c $Configuration --include-symbols --include-source" }
-    "BuildSite"       { RunCommand "dotnet run --project `"$projectDir`" `"$docsOutputDir`"" }
+    "BuildSite"       { RunCommand "dotnet run --project `"$projectDir`" -- `"$docsOutputDir`"" }
     "DevelopSite"     { RunCommand "dotnet watch --project `"$projectDir`" -- run `"$docsOutputDir`"" }
     Default           { RunCommand "dotnet build `"$projectDir`" -c $Configuration" }
 }
