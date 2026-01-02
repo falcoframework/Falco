@@ -54,6 +54,20 @@ let endpoints =
         mapPost "/hello/{name?}" mapRouteData
             (fun person -> Request.mapForm (mapRequestData person) Response.ofJson)
 
+        get "/hello-query"
+            (
+               Request.mapQuery
+                  (fun r ->
+                   let name = r?name.AsStringNonEmpty("world")
+                   $"Hello {name}!") Response.ofPlainText)
+
+        post "/hello-form"
+            (
+               Request.mapForm
+                  (fun r ->
+                   let name = r?name.AsStringNonEmpty("world")
+                   $"Hello {name}!") Response.ofPlainText)
+
         mapGet "/plug/{name?}"
             (fun r -> r?name.AsStringNonEmpty("world"))
             (fun name ctx ->

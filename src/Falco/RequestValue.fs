@@ -48,8 +48,7 @@ module RequestValue =
             acc
 
         let parseRequestPrimitive (x : string) =
-            let decoded = WebUtility.UrlDecode x
-            match decoded with
+            match x with
             | IsNullOrWhiteSpace _ -> RNull
             | IsTrue x
             | IsFalse x -> RBool x
@@ -208,7 +207,7 @@ module RequestValue =
     let private routeKeyValues (route : RouteValueDictionary) =
         route
         |> Seq.map (fun kvp ->
-            kvp.Key, seq { Convert.ToString(kvp.Value, Globalization.CultureInfo.InvariantCulture) })
+            kvp.Key, seq { Convert.ToString(kvp.Value, Globalization.CultureInfo.InvariantCulture) |> WebUtility.UrlDecode })
 
     let private queryKeyValues (query : IQueryCollection) =
         query
