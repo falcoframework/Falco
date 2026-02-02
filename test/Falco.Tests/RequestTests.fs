@@ -52,6 +52,23 @@ let ``Request.getRouteValues should return Map<string, string> from HttpContext`
     |> should equal "falco"
 
 [<Fact>]
+let ``Request.getRoute should preserve large int64 values as strings`` () =
+    // Regression test for https://github.com/falcoframework/Falco/issues/149
+    let ctx = getHttpContextWriteable false
+    ctx.Request.RouteValues <- RouteValueDictionary()
+    ctx.Request.RouteValues.Add("id", "9223372036854775807") // Int64.MaxValue as string
+
+    let route = Request.getRoute ctx
+
+    // Should return the original string, not scientific notation
+    route.GetString "id"
+    |> should equal "9223372036854775807"
+
+    // Should also be parseable as int64
+    route.GetInt64 "id"
+    |> should equal 9223372036854775807L
+
+[<Fact>]
 let ``Request.mapJson`` () =
     let ctx = getHttpContextWriteable false
     use ms = new MemoryStream(Encoding.UTF8.GetBytes("{\"name\":\"falco\"}"))
