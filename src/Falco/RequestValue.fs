@@ -53,6 +53,10 @@ module RequestValue =
             | IsNullOrWhiteSpace _ -> RNull
             | IsTrue x
             | IsFalse x -> RBool x
+            // Don't parse integers with leading zeros (except "0" itself) as floats
+            | _ when x.Length > 1 && x.StartsWith '0' && not(x.Contains '.') && not(x.Contains ',') -> RString x
+            // Don't parse large numerics as floats
+            | _ when x.Length > 15 -> RString x
             | IsFloat x -> RNumber x
             | x -> RString x
 
@@ -170,12 +174,11 @@ module RequestValue =
         |> requestAccToValues
 
     let parseString (keyValueString : string) : RequestValue =
-        let decoded = WebUtility.UrlDecode keyValueString
-        let keyValues = decoded.Split('&')
+        let keyValues = keyValueString.Split '&'
         let requestDataPairs = Dictionary<string, IList<string>>()
         let addOrSet (acc : Dictionary<string, IList<string>>) key value =
             if acc.ContainsKey key then
-                acc[key].Add(value)
+                acc[key].Add value
             else
                 acc.Add(key, List<string>(Seq.singleton value))
             ()
