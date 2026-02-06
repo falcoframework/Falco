@@ -25,7 +25,7 @@ module internal StringUtils =
 
     /// Splits string into substrings based on separator.
     let strSplit (sep : char array) (str : string) =
-        str.Split(sep)
+        str.Split(sep, StringSplitOptions.RemoveEmptyEntries)
 
 module internal StringParser =
     /// Helper to wrap .NET tryParser's.
