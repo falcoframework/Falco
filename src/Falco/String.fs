@@ -95,11 +95,22 @@ module internal StringPatterns =
     let (|IsInt32|_|) = StringParser.parseInt32
 
     let (|IsFloat|_|) (x : string) =
+        // Don't parse integers with leading zeros (except "0" itself) as floats
         if x.Length > 1
             && x.StartsWith("0")
             && not(x.Contains('.'))
             && not(x.Contains(',')) then
             None
+        // Don't parse large integers as floats - they lose precision
+        // Float64 has ~15-16 digits of precision, so integers with more than
+        // 15 significant digits would lose precision when stored as float
+        elif not(x.Contains('.')) && not(x.Contains(',')) && not(x.Contains('e')) && not(x.Contains('E')) then
+            // Count significant digits (excluding leading minus sign)
+            let digits = if x.StartsWith("-") then x.Substring(1) else x
+            if digits.Length > 15 then
+                None
+            else
+                StringParser.parseFloat x
         else
             StringParser.parseFloat x
 

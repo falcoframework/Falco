@@ -70,6 +70,33 @@ let ``RequestValue should parse int with leading zero as string`` () =
     |> should equal expected
 
 [<Fact>]
+let ``RequestValue should parse large int64 values as string to preserve precision`` () =
+    // Int64.MaxValue = 9223372036854775807 has 19 digits, exceeds float64 precision
+    let expected = RObject [ "id", RString "9223372036854775807" ]
+
+    "id=9223372036854775807"
+    |> RequestValue.parseString
+    |> should equal expected
+
+[<Fact>]
+let ``RequestValue should parse 15 digit integers as RNumber`` () =
+    // 15 digits is within float64 precision
+    let expected = RObject [ "id", RNumber 123456789012345. ]
+
+    "id=123456789012345"
+    |> RequestValue.parseString
+    |> should equal expected
+
+[<Fact>]
+let ``RequestValue should parse 16+ digit integers as RString`` () =
+    // 16+ digits exceeds float64 precision
+    let expected = RObject [ "id", RString "1234567890123456" ]
+
+    "id=1234567890123456"
+    |> RequestValue.parseString
+    |> should equal expected
+
+[<Fact>]
 let ``RequestValue should parse multiple simple pairs`` () =
     let expected = RObject [
         "season", RString "summer"
