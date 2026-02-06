@@ -64,6 +64,11 @@ module internal StringPatterns =
         | IsBool x when x = false -> Some false
         | _ -> None
 
+    let (|IsNullOrWhiteSpace|_|) (x : string) =
+        match String.IsNullOrWhiteSpace x with
+        | true -> Some ()
+        | false -> None
+
     let (|IsInt16|_|) = StringParser.parseInt16
     let (|IsInt64|_|) = StringParser.parseInt64
     let (|IsInt32|_|) = StringParser.parseInt32
@@ -73,8 +78,3 @@ module internal StringPatterns =
     let (|IsDateTimeOffset|_|) = StringParser.parseDateTimeOffset
     let (|IsTimeSpan|_|) = StringParser.parseTimeSpan
     let (|IsGuid|_|) = StringParser.parseGuid
-
-    let (|IsNullOrWhiteSpace|_|) (x : string) =
-        match String.IsNullOrWhiteSpace x with
-        | true -> Some ()
-        | false -> None

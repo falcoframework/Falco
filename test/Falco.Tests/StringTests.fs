@@ -122,3 +122,139 @@ module StringParser =
         StringParser.parseGuid guidStr |> should equal (Some guid)
         StringParser.parseGuid "notaguid" |> should equal None
         StringParser.parseGuid "" |> should equal None
+
+module StringPatterns =
+    [<Fact>]
+    let ``StringPatterns.IsBool should match valid boolean strings`` () =
+        match "true" with
+        | StringPatterns.IsBool b -> b |> should equal true
+        | _ -> failwith "Did not match"
+
+        match "FALSE" with
+        | StringPatterns.IsBool b -> b |> should equal false
+        | _ -> failwith "Did not match"
+
+        match "notabool" with
+        | StringPatterns.IsBool _ -> failwith "Should not have matched"
+        | _ -> () // Expected
+
+    [<Fact>]
+    let ``StringPatterns.IsTrue`` () =
+        match "true" with
+        | StringPatterns.IsTrue _ -> () // Expected
+        | _ -> failwith "Did not match"
+
+        match "false" with
+        | StringPatterns.IsTrue _ -> failwith "Should not have matched"
+        | _ -> () // Expected
+
+    [<Fact>]
+    let ``StringPatterns.IsFalse`` () =
+        match "false" with
+        | StringPatterns.IsFalse _ -> () // Expected
+        | _ -> failwith "Did not match"
+
+        match "true" with
+        | StringPatterns.IsFalse _ -> failwith "Should not have matched"
+        | _ -> () // Expected
+
+    [<Fact>]
+    let ``StringPatterns.IsNullOrWhiteSpace should match null or whitespace strings`` () =
+        let isNullOrWhiteSpace (str: string) =
+            match str with
+            | StringPatterns.IsNullOrWhiteSpace -> true
+            | _ -> false
+        isNullOrWhiteSpace null |> should be True
+        isNullOrWhiteSpace "" |> should be True
+        isNullOrWhiteSpace "   " |> should be True
+        isNullOrWhiteSpace "hello" |> should be False
+        isNullOrWhiteSpace "  hello  " |> should be False
+
+    [<Fact>]
+    let ``StringPatterns.IsInt16 should match valid int16 strings`` () =
+        match "123" with
+        | StringPatterns.IsInt16 i -> i |> should equal 123s
+        | _ -> failwith "Did not match"
+
+        match "notanint" with
+        | StringPatterns.IsInt16 _ -> failwith "Should not have matched"
+        | _ -> () // Expected
+
+    [<Fact>]
+    let ``StringPatterns.IsInt32 should match valid int32 strings`` () =
+        match "123456" with
+        | StringPatterns.IsInt32 i -> i |> should equal 123456
+        | _ -> failwith "Did not match"
+
+        match "notanint" with
+        | StringPatterns.IsInt32 _ -> failwith "Should not have matched"
+        | _ -> () // Expected
+
+    [<Fact>]
+    let ``StringPatterns.IsInt64 should match valid int64 strings`` () =
+        match "1234567890123" with
+        | StringPatterns.IsInt64 i -> i |> should equal 1234567890123L
+        | _ -> failwith "Did not match"
+
+        match "notanint" with
+        | StringPatterns.IsInt64 _ -> failwith "Should not have matched"
+        | _ -> () // Expected
+
+    [<Fact>]
+    let ``StringPatterns.IsFloat should match valid float strings`` () =
+        match "123.45" with
+        | StringPatterns.IsFloat f -> f |> should equal 123.45
+        | _ -> failwith "Did not match"
+
+        match "notafloat" with
+        | StringPatterns.IsFloat _ -> failwith "Should not have matched"
+        | _ -> () // Expected
+
+    [<Fact>]
+    let ``StringPatterns.IsDecimal should match valid decimal strings`` () =
+        match "123.45" with
+        | StringPatterns.IsDecimal d -> d |> should equal 123.45M
+        | _ -> failwith "Did not match"
+
+        match "notadecimal" with
+        | StringPatterns.IsDecimal _ -> failwith "Should not have matched"
+        | _ -> () // Expected
+
+    [<Fact>]
+    let ``StringPatterns.IsDateTime should match valid DateTime strings`` () =
+        let dateTimeStr = "2021-01-01T12:00:00Z"
+        let expectedDateTime = DateTime(2021, 1, 1, 12, 0, 0, DateTimeKind.Utc)
+
+        match dateTimeStr with
+        | StringPatterns.IsDateTime dt -> dt |> should equal expectedDateTime
+        | _ -> failwith "Did not match"
+
+        match "notadatetime" with
+        | StringPatterns.IsDateTime _ -> failwith "Should not have matched"
+        | _ -> () // Expected
+
+    [<Fact>]
+    let ``StringPatterns.IsDateTimeOffset should match valid DateTimeOffset strings`` () =
+        let dtoStr = "2021-01-01T12:00:00Z"
+        let expectedDto = DateTimeOffset(2021, 1, 1, 12, 0, 0, TimeSpan.Zero)
+
+        match dtoStr with
+        | StringPatterns.IsDateTimeOffset dto -> dto |> should equal expectedDto
+        | _ -> failwith "Did not match"
+
+        match "notadatetimeoffset" with
+        | StringPatterns.IsDateTimeOffset _ -> failwith "Should not have matched"
+        | _ -> () // Expected
+
+    [<Fact>]
+    let ``StringPatterns.IsGuid should match valid GUID strings`` () =
+        let guidStr = "d3b07384-d9a0-4c19-9a0c-0305e1b1c8f2"
+        let expectedGuid = Guid.Parse(guidStr)
+
+        match guidStr with
+        | StringPatterns.IsGuid g -> g |> should equal expectedGuid
+        | _ -> failwith "Did not match"
+
+        match "notaguid" with
+        | StringPatterns.IsGuid _ -> failwith "Should not have matched"
+        | _ -> () // Expected
