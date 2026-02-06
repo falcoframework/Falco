@@ -57,10 +57,29 @@ module Tests =
         let content = response.Content.ReadAsStringAsync().Result
         Assert.Equal("""{"Message":"Hello John!"}""", content)
 
+        let response = client.PostAsync("/hello/John+Smith", form).Result
+        let content = response.Content.ReadAsStringAsync().Result
+        Assert.Equal("""{"Message":"Hello John Smith!"}""", content)
+
         use form = new FormUrlEncodedContent(dict [ ("age", "42") ])
         let response = client.PostAsync("/hello/John", form).Result
         let content = response.Content.ReadAsStringAsync().Result
         Assert.Equal("""{"Message":"Hello John, you are 42 years old!"}""", content)
+
+    [<Fact>]
+    let ``Receive mapped form response from: POST /hello-form`` () =
+        use client = factory.CreateClient ()
+        use form = new FormUrlEncodedContent(dict [("name", "Mr ++ ")])
+        let response = client.PostAsync("/hello-form", form).Result
+        let content = response.Content.ReadAsStringAsync().Result
+        Assert.Equal("Hello Mr ++ !", content)
+
+    [<Fact>]
+    let ``Receive mapped query response from: GET /hello-query`` () =
+        use client = factory.CreateClient ()
+        let response = client.GetAsync("/hello-query?name=Mr%20%2B%2B").Result
+        let content = response.Content.ReadAsStringAsync().Result
+        Assert.Equal("Hello Mr ++!", content)
 
     [<Fact>]
     let ``Receive utf8 text/plain response from: GET /plug/name?`` () =
