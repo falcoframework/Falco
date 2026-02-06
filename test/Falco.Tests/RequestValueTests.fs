@@ -5,6 +5,41 @@ open FsUnit.Xunit
 open Xunit
 
 [<Fact>]
+let ``RequestValue should parse empty string as RNull`` () =
+    let expected = RObject [ "value", RNull ]
+    RequestValue.parseString "value=" |> should equal expected
+
+[<Fact>]
+let ``RequestValue should parse whitespace-only string as RNull`` () =
+    let expected = RObject [ "value", RNull ]
+    RequestValue.parseString "value=   " |> should equal expected
+
+[<Theory>]
+[<InlineData("-1", -1.)>]
+[<InlineData("-123.456", -123.456)>]
+[<InlineData("-0.001", -0.001)>]
+let ``RequestValue should parse negative numbers as RNumber`` (input, expected) =
+    let expectedValue = RObject [ "value", RNumber expected ]
+    RequestValue.parseString $"value={input}" |> should equal expectedValue
+
+[<Theory>]
+[<InlineData("0.0", 0.0)>]
+[<InlineData("0.00001", 0.00001)>]
+[<InlineData("999999.999999", 999999.999999)>]
+let ``RequestValue should parse small decimal values as RNumber`` (input, expected) =
+    let expectedValue = RObject [ "value", RNumber expected ]
+    RequestValue.parseString $"value={input}" |> should equal expectedValue
+
+[<Theory>]
+[<InlineData("1e10", 1e10)>]
+[<InlineData("-1e-5", -1e-5)>]
+[<InlineData("3.14e2", 314.)>]
+[<InlineData("1.5e-5", 1.5e-5)>]
+let ``RequestValue should parse scientific notation as RString`` (input, expected) =
+    let expectedValue = RObject [ "value", RNumber input ]
+    RequestValue.parseString $"value={input}" |> should equal expectedValue
+
+[<Fact>]
 let ``RequestValue should return empty RObject for incomplete request body`` () =
     let expected = RObject []
     ""
@@ -189,3 +224,66 @@ let ``RequestValue should parse complex`` () =
         |> RequestValue.parse
 
     requestValue |> should equal expected
+
+[<Fact>]
+let ``RequestValue should parse nested objects without lists`` () =
+    let expected = RObject [
+        "user", RObject [
+            "name", RString "john";
+            "age", RNumber 30.0
+        ]
+    ]
+    RequestValue.parseString "user.name=john&user.age=30" |> should equal expected
+
+[<Fact>]
+let ``RequestValue should parse deeply nested structures (3+ levels)`` () =
+    let expected = RObject [
+        "user", RObject [
+            "profile", RObject [
+                "address", RObject [
+                    "city", RString "NYC"
+                ]
+            ]
+        ]
+    ]
+    RequestValue.parseString "user.profile.address.city=NYC" |> should equal expected
+
+[<Fact>]
+let ``RequestValue should parse mixed flat keys and nested keys`` () =
+    let expected = RObject [
+        "id", RNumber 123.0;
+        "user", RObject [
+            "name", RString "john"
+        ]
+    ]
+    RequestValue.parseString "id=123&user.name=john" |> should equal expected
+
+[<Fact>]
+let ``RequestValue should handle empty list values`` () =
+    let expected = RObject [
+        "items", RList [ RNull; RString "value" ]
+    ]
+    RequestValue.parseString "items[]=&items[]=value" |> should equal expected
+
+[<Fact>]
+let ``RequestValue should handle invalid indexed list syntax`` () =
+    // Non-numeric index should be treated as literal key
+    let expected = RObject [ "items[abc]", RString "value" ]
+    RequestValue.parseString "items[abc]=value" |> should equal expected
+
+[<Fact>]
+let ``RequestValue should handle sparse indexed lists`` () =
+    // items[0]=a&items[2]=c should have RNull at index 1
+    let expected = RObject [ "items", RList [ RString "a"; RNull; RString "c" ] ]
+    RequestValue.parseString "items[0]=a&items[2]=c" |> should equal expected
+
+[<Fact>]
+let ``RequestValue should handle duplicate keys concatenation`` () =
+    // Last value should win for flat keys
+    let expected = RObject [ "name", RList [ RString "john"; RString "jane" ] ]
+    RequestValue.parseString "name=john&name=jane" |> should equal expected
+
+[<Fact>]
+let ``RequestValue should handle empty input`` () =
+    let expected = RObject []
+    RequestValue.parseString "" |> should equal expected

@@ -36,6 +36,8 @@ module internal StringParser =
         | false, _   -> None
 
     let parseBoolean (value : string) =
+        // we explicitly do not support on/off boolean values
+        // see: https://github.com/falcoframework/Falco/issues/129#issuecomment-2496081776
         match value with
         | x when String.Equals("true", x, StringComparison.OrdinalIgnoreCase) -> Some true
         | x when String.Equals("false", x, StringComparison.OrdinalIgnoreCase) -> Some false
@@ -53,6 +55,15 @@ module internal StringParser =
 
 module internal StringPatterns =
     let (|IsBool|_|) = StringParser.parseBoolean
+    let (|IsInt16|_|) = StringParser.parseInt16
+    let (|IsInt64|_|) = StringParser.parseInt64
+    let (|IsInt32|_|) = StringParser.parseInt32
+    let (|IsFloat|_|) (x : string) = StringParser.parseFloat x
+    let (|IsDecimal|_|) = StringParser.parseDecimal
+    let (|IsDateTime|_|) = StringParser.parseDateTime
+    let (|IsDateTimeOffset|_|) = StringParser.parseDateTimeOffset
+    let (|IsTimeSpan|_|) = StringParser.parseTimeSpan
+    let (|IsGuid|_|) = StringParser.parseGuid
 
     let (|IsTrue|_|) =
         function
@@ -68,13 +79,3 @@ module internal StringPatterns =
         match String.IsNullOrWhiteSpace x with
         | true -> Some ()
         | false -> None
-
-    let (|IsInt16|_|) = StringParser.parseInt16
-    let (|IsInt64|_|) = StringParser.parseInt64
-    let (|IsInt32|_|) = StringParser.parseInt32
-    let (|IsFloat|_|) (x : string) = StringParser.parseFloat x
-    let (|IsDecimal|_|) = StringParser.parseDecimal
-    let (|IsDateTime|_|) = StringParser.parseDateTime
-    let (|IsDateTimeOffset|_|) = StringParser.parseDateTimeOffset
-    let (|IsTimeSpan|_|) = StringParser.parseTimeSpan
-    let (|IsGuid|_|) = StringParser.parseGuid

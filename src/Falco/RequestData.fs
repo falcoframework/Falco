@@ -184,23 +184,24 @@ module RequestDataExtensions =
         new(requestData : IDictionary<string, string seq>) = RequestData(RequestValue.parse requestData)
         new(keyValues : (string * string seq) seq) = RequestData(dict keyValues)
 
+
         static member Empty = RequestData RNull
 
         member _.AsKeyValues() = RequestValue.asObject requestValue |> Option.map (List.map (fun (k, v) -> k, RequestData v)) |> Option.defaultValue []
         member _.AsList() = RequestValue.asList requestValue |> Option.map (List.map RequestData) |> Option.defaultValue []
-        member _.AsString(?defaultValue) = RequestValue.asString requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue "")
-        member _.AsStringNonEmpty(?defaultValue) = RequestValue.asStringNonEmpty requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue "")
-        member _.AsInt16(?defaultValue) = RequestValue.asInt16 requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue 0s)
-        member _.AsInt32(?defaultValue) = RequestValue.asInt32 requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue 0)
-        member x.AsInt(?defaultValue) = x.AsInt32(?defaultValue = defaultValue)
-        member _.AsInt64(?defaultValue) = RequestValue.asInt64 requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue 0L)
-        member _.AsBoolean(?defaultValue) = RequestValue.asBoolean requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue false)
-        member _.AsFloat(?defaultValue) = RequestValue.asFloat requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue 0.)
-        member _.AsDecimal(?defaultValue) = RequestValue.asDecimal requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue 0.M)
-        member _.AsDateTime(?defaultValue) = RequestValue.asDateTime requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue DateTime.MinValue)
-        member _.AsDateTimeOffset(?defaultValue) = RequestValue.asDateTimeOffset requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue DateTimeOffset.MinValue)
-        member _.AsTimeSpan(?defaultValue) = RequestValue.asTimeSpan requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue TimeSpan.MinValue)
-        member _.AsGuid(?defaultValue) = RequestValue.asGuid requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue Guid.Empty)
+        member _.AsString ?defaultValue = RequestValue.asString requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue "")
+        member _.AsStringNonEmpty ?defaultValue = RequestValue.asStringNonEmpty requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue "")
+        member _.AsInt16 ?defaultValue = RequestValue.asInt16 requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue 0s)
+        member _.AsInt32 ?defaultValue = RequestValue.asInt32 requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue 0)
+        member x.AsInt ?defaultValue = x.AsInt32(?defaultValue = defaultValue)
+        member _.AsInt64 ?defaultValue = RequestValue.asInt64 requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue 0L)
+        member _.AsBoolean ?defaultValue = RequestValue.asBoolean requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue false)
+        member _.AsFloat ?defaultValue = RequestValue.asFloat requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue 0.)
+        member _.AsDecimal ?defaultValue = RequestValue.asDecimal requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue 0.M)
+        member _.AsDateTime ?defaultValue = RequestValue.asDateTime requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue DateTime.MinValue)
+        member _.AsDateTimeOffset ?defaultValue = RequestValue.asDateTimeOffset requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue DateTimeOffset.MinValue)
+        member _.AsTimeSpan ?defaultValue = RequestValue.asTimeSpan requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue TimeSpan.MinValue)
+        member _.AsGuid ?defaultValue = RequestValue.asGuid requestValue |> Option.defaultWith (fun _ -> defaultArg defaultValue Guid.Empty)
 
         member _.AsStringOption() = RequestValue.asString requestValue
         member _.AsStringNonEmptyOption() = RequestValue.asStringNonEmpty requestValue
@@ -239,51 +240,51 @@ module RequestDataExtensions =
             | _ -> None
 
         member x.Get(name : string) : RequestData =
-            match x.TryGet(name) with
+            match x.TryGet name with
             | Some v -> v
             | None -> RequestData.Empty
 
-        member x.TryGetString (name : string) = x.TryGet(name) |> Option.bind _.AsStringOption()
-        member x.TryGetStringNonEmpty (name : string) = x.TryGet(name) |> Option.bind _.AsStringNonEmptyOption()
-        member x.TryGetInt16 (name : string) = x.TryGet(name) |> Option.bind _.AsInt16Option()
-        member x.TryGetInt32 (name : string) = x.TryGet(name) |> Option.bind _.AsInt32Option()
-        member x.TryGetInt (name : string) = x.TryGet(name) |> Option.bind _.AsIntOption()
-        member x.TryGetInt64 (name : string) = x.TryGet(name) |> Option.bind _.AsInt64Option()
-        member x.TryGetBoolean (name : string) = x.TryGet(name) |> Option.bind _.AsBooleanOption()
-        member x.TryGetFloat (name : string) = x.TryGet(name) |> Option.bind _.AsFloatOption()
-        member x.TryGetDecimal (name : string) = x.TryGet(name) |> Option.bind _.AsDecimalOption()
-        member x.TryGetDateTime (name : string) = x.TryGet(name) |> Option.bind _.AsDateTimeOption()
-        member x.TryGetDateTimeOffset (name : string) = x.TryGet(name) |> Option.bind _.AsDateTimeOffsetOption()
-        member x.TryGetGuid (name : string) = x.TryGet(name) |> Option.bind _.AsGuidOption()
-        member x.TryGetTimeSpan (name : string) = x.TryGet(name) |> Option.bind _.AsTimeSpanOption()
+        member x.TryGetString (name : string) = x.TryGet name |> Option.bind _.AsStringOption()
+        member x.TryGetStringNonEmpty (name : string) = x.TryGet name |> Option.bind _.AsStringNonEmptyOption()
+        member x.TryGetInt16 (name : string) = x.TryGet name |> Option.bind _.AsInt16Option()
+        member x.TryGetInt32 (name : string) = x.TryGet name |> Option.bind _.AsInt32Option()
+        member x.TryGetInt (name : string) = x.TryGet name |> Option.bind _.AsIntOption()
+        member x.TryGetInt64 (name : string) = x.TryGet name |> Option.bind _.AsInt64Option()
+        member x.TryGetBoolean (name : string) = x.TryGet name |> Option.bind _.AsBooleanOption()
+        member x.TryGetFloat (name : string) = x.TryGet name |> Option.bind _.AsFloatOption()
+        member x.TryGetDecimal (name : string) = x.TryGet name |> Option.bind _.AsDecimalOption()
+        member x.TryGetDateTime (name : string) = x.TryGet name |> Option.bind _.AsDateTimeOption()
+        member x.TryGetDateTimeOffset (name : string) = x.TryGet name |> Option.bind _.AsDateTimeOffsetOption()
+        member x.TryGetGuid (name : string) = x.TryGet name |> Option.bind _.AsGuidOption()
+        member x.TryGetTimeSpan (name : string) = x.TryGet name |> Option.bind _.AsTimeSpanOption()
 
-        member x.GetString (name : string, ?defaultValue : String) = x.TryGetString(name) |> Option.defaultWith (fun () -> defaultArg defaultValue "")
-        member x.GetStringNonEmpty (name : string, ?defaultValue : String) = x.TryGetStringNonEmpty(name) |> Option.defaultWith (fun () -> defaultArg defaultValue "")
-        member x.GetInt16 (name : string, ?defaultValue : Int16) = x.TryGetInt16(name) |> Option.defaultWith (fun () -> defaultArg defaultValue 0s)
-        member x.GetInt32 (name : string, ?defaultValue : Int32) = x.TryGetInt32(name) |> Option.defaultWith (fun () -> defaultArg defaultValue 0)
-        member x.GetInt (name : string, ?defaultValue : Int32) = x.TryGetInt(name) |> Option.defaultWith (fun () -> defaultArg defaultValue 0)
-        member x.GetInt64 (name : string, ?defaultValue : Int64) = x.TryGetInt64(name) |> Option.defaultWith (fun () -> defaultArg defaultValue 0L)
-        member x.GetBoolean (name : string, ?defaultValue : Boolean) = x.TryGetBoolean(name) |> Option.defaultWith (fun () -> defaultArg defaultValue false)
-        member x.GetFloat (name : string, ?defaultValue : float) = x.TryGetFloat(name) |> Option.defaultWith (fun () -> defaultArg defaultValue 0)
-        member x.GetDecimal (name : string, ?defaultValue : Decimal) = x.TryGetDecimal(name) |> Option.defaultWith (fun () -> defaultArg defaultValue 0M)
-        member x.GetDateTime (name : string, ?defaultValue : DateTime) = x.TryGetDateTime(name) |> Option.defaultWith (fun () -> defaultArg defaultValue DateTime.MinValue)
-        member x.GetDateTimeOffset (name : string, ?defaultValue : DateTimeOffset) = x.TryGetDateTimeOffset(name) |> Option.defaultWith (fun () -> defaultArg defaultValue DateTimeOffset.MinValue)
-        member x.GetGuid (name : string, ?defaultValue : Guid) = x.TryGetGuid(name) |> Option.defaultWith (fun () -> defaultArg defaultValue Guid.Empty)
-        member x.GetTimeSpan (name : string, ?defaultValue : TimeSpan) = x.TryGetTimeSpan(name) |> Option.defaultWith (fun () -> defaultArg defaultValue TimeSpan.MinValue)
+        member x.GetString (name : string, ?defaultValue : String) = x.TryGetString name |> Option.defaultWith (fun () -> defaultArg defaultValue "")
+        member x.GetStringNonEmpty (name : string, ?defaultValue : String) = x.TryGetStringNonEmpty name |> Option.defaultWith (fun () -> defaultArg defaultValue "")
+        member x.GetInt16 (name : string, ?defaultValue : Int16) = x.TryGetInt16 name |> Option.defaultWith (fun () -> defaultArg defaultValue 0s)
+        member x.GetInt32 (name : string, ?defaultValue : Int32) = x.TryGetInt32 name |> Option.defaultWith (fun () -> defaultArg defaultValue 0)
+        member x.GetInt (name : string, ?defaultValue : Int32) = x.TryGetInt name |> Option.defaultWith (fun () -> defaultArg defaultValue 0)
+        member x.GetInt64 (name : string, ?defaultValue : Int64) = x.TryGetInt64 name |> Option.defaultWith (fun () -> defaultArg defaultValue 0L)
+        member x.GetBoolean (name : string, ?defaultValue : Boolean) = x.TryGetBoolean name |> Option.defaultWith (fun () -> defaultArg defaultValue false)
+        member x.GetFloat (name : string, ?defaultValue : float) = x.TryGetFloat name |> Option.defaultWith (fun () -> defaultArg defaultValue 0)
+        member x.GetDecimal (name : string, ?defaultValue : Decimal) = x.TryGetDecimal name |> Option.defaultWith (fun () -> defaultArg defaultValue 0M)
+        member x.GetDateTime (name : string, ?defaultValue : DateTime) = x.TryGetDateTime name |> Option.defaultWith (fun () -> defaultArg defaultValue DateTime.MinValue)
+        member x.GetDateTimeOffset (name : string, ?defaultValue : DateTimeOffset) = x.TryGetDateTimeOffset name |> Option.defaultWith (fun () -> defaultArg defaultValue DateTimeOffset.MinValue)
+        member x.GetGuid (name : string, ?defaultValue : Guid) = x.TryGetGuid name |> Option.defaultWith (fun () -> defaultArg defaultValue Guid.Empty)
+        member x.GetTimeSpan (name : string, ?defaultValue : TimeSpan) = x.TryGetTimeSpan name |> Option.defaultWith (fun () -> defaultArg defaultValue TimeSpan.MinValue)
 
-        member x.GetStringList (name : string) = x.TryGet(name) |> Option.map _.AsStringList() |> Option.defaultValue []
-        member x.GetStringNonEmptyList (name : string) = x.TryGet(name) |> Option.map _.AsStringNonEmptyList() |> Option.defaultValue []
-        member x.GetInt16List (name : string) = x.TryGet(name) |> Option.map _.AsInt16List() |> Option.defaultValue []
-        member x.GetInt32List (name : string) = x.TryGet(name) |> Option.map _.AsInt32List() |> Option.defaultValue []
-        member x.GetIntList (name : string) = x.TryGet(name) |> Option.map _.AsIntList() |> Option.defaultValue []
-        member x.GetInt64List (name : string) = x.TryGet(name) |> Option.map _.AsInt64List() |> Option.defaultValue []
-        member x.GetBooleanList (name : string) = x.TryGet(name) |> Option.map _.AsBooleanList() |> Option.defaultValue []
-        member x.GetFloatList (name : string) = x.TryGet(name) |> Option.map _.AsFloatList() |> Option.defaultValue []
-        member x.GetDecimalList (name : string) = x.TryGet(name) |> Option.map _.AsDecimalList() |> Option.defaultValue []
-        member x.GetDateTimeList (name : string) = x.TryGet(name) |> Option.map _.AsDateTimeList() |> Option.defaultValue []
-        member x.GetDateTimeOffsetList (name : string) = x.TryGet(name) |> Option.map _.AsDateTimeOffsetList() |> Option.defaultValue []
-        member x.GetGuidList (name : string) = x.TryGet(name) |> Option.map _.AsGuidList() |> Option.defaultValue []
-        member x.GetTimeSpanList (name : string) = x.TryGet(name) |> Option.map _.AsTimeSpanList() |> Option.defaultValue []
+        member x.GetStringList (name : string) = x.TryGet name |> Option.map _.AsStringList() |> Option.defaultValue []
+        member x.GetStringNonEmptyList (name : string) = x.TryGet name |> Option.map _.AsStringNonEmptyList() |> Option.defaultValue []
+        member x.GetInt16List (name : string) = x.TryGet name |> Option.map _.AsInt16List() |> Option.defaultValue []
+        member x.GetInt32List (name : string) = x.TryGet name |> Option.map _.AsInt32List() |> Option.defaultValue []
+        member x.GetIntList (name : string) = x.TryGet name |> Option.map _.AsIntList() |> Option.defaultValue []
+        member x.GetInt64List (name : string) = x.TryGet name |> Option.map _.AsInt64List() |> Option.defaultValue []
+        member x.GetBooleanList (name : string) = x.TryGet name |> Option.map _.AsBooleanList() |> Option.defaultValue []
+        member x.GetFloatList (name : string) = x.TryGet name |> Option.map _.AsFloatList() |> Option.defaultValue []
+        member x.GetDecimalList (name : string) = x.TryGet name |> Option.map _.AsDecimalList() |> Option.defaultValue []
+        member x.GetDateTimeList (name : string) = x.TryGet name |> Option.map _.AsDateTimeList() |> Option.defaultValue []
+        member x.GetDateTimeOffsetList (name : string) = x.TryGet name |> Option.map _.AsDateTimeOffsetList() |> Option.defaultValue []
+        member x.GetGuidList (name : string) = x.TryGet name |> Option.map _.AsGuidList() |> Option.defaultValue []
+        member x.GetTimeSpanList (name : string) = x.TryGet name |> Option.map _.AsTimeSpanList() |> Option.defaultValue []
 
     let inline (?) (requestData : RequestData) (name : string) =
         requestData.Get name
