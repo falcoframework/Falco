@@ -179,6 +179,57 @@ let ``RequestData collection should resolve primitives`` () =
     scr.GetTimeSpanList "ftimespan"             |> should equal [TimeSpan.Parse(timespanStr)]
     scr.GetGuidList "fguid"                     |> should equal [Guid.Parse(guidStr)]
 
+[<Fact>]
+let ``RequestData Empty should return defaults and empty collections`` () =
+    let r = RequestData.Empty
+    r.AsString() |> should equal ""
+    r.AsStringOption() |> should equal (Some "")
+    r.AsIntOption() |> should equal None
+    r.AsStringList() |> Seq.length |> should equal 0
+    r.AsList() |> Seq.length |> should equal 0
+    r.AsKeyValues() |> Seq.length |> should equal 0
+
+[<Fact>]
+let ``RequestData should allow list access on non-list primitives`` () =
+    let r1 = RequestData(RString "hello")
+    let r2 = RequestData(RString "123")
+    r1.AsStringList() |> should equal ["hello"]
+    r2.AsInt32List() |> should equal [123]
+
+[<Fact>]
+let ``RequestData nested lookup should be case-insensitive`` () =
+    let r =
+        RequestData(
+            RObject [
+                "Foo", RObject [
+                    "Bar", RString "baz"
+                ]
+            ])
+    r?foo?bar.AsString() |> should equal "baz"
+    r?FOO?BAR.AsString() |> should equal "baz"
+
+[<Fact>]
+let ``RequestData missing nested key should yield None for options`` () =
+    let r = RequestData(RObject [ "foo", RObject [] ])
+    r?foo?missing.AsIntOption() |> should equal None
+    r?foo?missing.AsGuidOption() |> should equal None
+
+[<Fact>]
+let ``RequestData should parse boolean from numeric`` () =
+    RequestData(RNumber 0.).AsBoolean() |> should equal false
+    RequestData(RNumber 1.).AsBoolean() |> should equal true
+
+[<Fact>]
+let ``RequestData should parse DateTime from epoch milliseconds`` () =
+    let r = RequestData(RNumber 0.)
+    r.AsDateTime() |> should equal (DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc))
+
+[<Fact>]
+let ``RequestData should return None for invalid Guid and TimeSpan`` () =
+    let r1 = RequestData(RString "not-a-guid")
+    let r2 = RequestData(RString "not-a-timespan")
+    r1.AsGuidOption() |> should equal None
+    r2.AsTimeSpanOption() |> should equal None
 
 [<Fact>]
 let ``Can make FormData from IFormCollection`` () =
@@ -211,3 +262,158 @@ let ``Can safely get IFormFile from IFormCollection`` () =
 
     formFileData.TryGetFile formFileName
     |> shouldBeSome (fun _ ->  ())
+
+[<Fact>]
+let ``FormData TryGetFile should return None for null or whitespace name`` () =
+    let fd = FormData(RequestValue.RNull, Some (FormFileCollection() :> IFormFileCollection))
+    fd.TryGetFile null |> shouldBeNone
+    fd.TryGetFile "" |> shouldBeNone
+    fd.TryGetFile "   " |> shouldBeNone
+
+// ...existing code...
+
+[<Fact>]
+let ``RequestData RNull conversions should return defaults`` () =
+    let r = RequestData(RNull)
+    r.AsString() |> should equal ""
+    r.AsInt32() |> should equal 0
+    r.AsBoolean() |> should equal false
+    r.AsFloat() |> should equal 0.
+    r.AsDecimal() |> should equal 0M
+    r.AsGuid() |> should equal Guid.Empty
+    r.AsDateTime() |> should equal DateTime.MinValue
+    r.AsTimeSpan() |> should equal TimeSpan.MinValue
+
+[<Fact>]
+let ``RequestData RBool conversions to string`` () =
+    let rTrue = RequestData(RBool true)
+    let rFalse = RequestData(RBool false)
+    rTrue.AsString() |> should equal "true"
+    rFalse.AsString() |> should equal "false"
+
+[<Fact>]
+let ``RequestData RNumber conversions to string`` () =
+    let r = RequestData(RNumber 42.5)
+    r.AsString() |> should equal "42.5"
+
+[<Fact>]
+let ``RequestData TryGet methods return None on invalid conversions`` () =
+    let r = RequestData(RString "not-a-number")
+    r.TryGetInt32("value") |> should equal None
+    r.TryGetBoolean("value") |> should equal None
+    r.TryGetGuid("value") |> should equal None
+
+[<Fact>]
+let ``RequestData empty string should convert to RNull equivalent`` () =
+    let r = RequestData(RString "")
+    r.AsString() |> should equal ""
+    r.AsStringNonEmpty() |> should equal ""
+
+[<Fact>]
+let ``RequestData whitespace string should convert to empty for AsString`` () =
+    let r = RequestData(RString "   ")
+    r.AsString() |> should equal "   "  // preserves whitespace
+    r.AsStringNonEmpty() |> should equal "   "  // preserves whitespace
+
+[<Fact>]
+let ``RequestData RObject accessed as primitive should return defaults`` () =
+    let r = RequestData(RObject [ "key", RString "value" ])
+    r.AsString() |> should equal ""
+    r.AsInt32() |> should equal 0
+    r.AsBoolean() |> should equal false
+
+[<Fact>]
+let ``RequestData negative numbers in lists`` () =
+    let r = RequestData(RList [ RNumber -5.; RNumber -10.; RNumber -15. ])
+    r.AsInt32List() |> should equal [-5; -10; -15]
+
+[<Fact>]
+let ``RequestData very large numbers should overflow gracefully`` () =
+    let r = RequestData(RNumber (float System.Int32.MaxValue + 1000.))
+    r.AsInt32Option() |> should equal None  // out of range
+    r.AsInt64Option() |> should not' (equal None)  // should fit in Int64
+
+[<Fact>]
+let ``RequestData float precision edge cases`` () =
+    let r1 = RequestData(RNumber Double.NaN)
+    let r2 = RequestData(RNumber Double.PositiveInfinity)
+    let r3 = RequestData(RNumber Double.NegativeInfinity)
+    r1.AsFloat() |> Double.IsNaN |> should equal true
+    r2.AsFloat() |> should equal Double.PositiveInfinity
+    r3.AsFloat() |> should equal Double.NegativeInfinity
+
+[<Fact>]
+let ``RequestData empty list`` () =
+    let r = RequestData(RList [])
+    r.AsStringList() |> Seq.length |> should equal 0
+    r.AsInt32List() |> Seq.length |> should equal 0
+    r.AsList() |> Seq.length |> should equal 0
+
+[<Fact>]
+let ``RequestData list with mixed null and valid values`` () =
+    let r = RequestData(RList [ RString "hello"; RNull; RString "world" ])
+    r.AsStringList() |> should equal ["hello"; ""; "world"]
+
+[<Fact>]
+let ``RequestData single-item list`` () =
+    let r = RequestData(RList [ RNumber 42. ])
+    r.AsInt32List() |> should equal [42]
+
+[<Fact>]
+let ``RequestData very large list`` () =
+    let large = List.init 1000 (fun i -> RNumber (float i))
+    let r = RequestData(RList large)
+    r.AsInt32List() |> List.length |> should equal 1000
+    r.AsInt32List() |> List.head |> should equal 0
+    r.AsInt32List() |> List.last |> should equal 999
+
+[<Fact>]
+let ``RequestData deeply nested objects`` () =
+    let r = RequestData(
+        RObject [
+            "level1", RObject [
+                "level2", RObject [
+                    "level3", RString "deep"
+                ]
+            ]
+        ])
+    r?level1?level2?level3.AsString() |> should equal "deep"
+
+[<Fact>]
+let ``RequestData RNumber 0 and 1 as boolean`` () =
+    let r0 = RequestData(RNumber 0.)
+    let r1 = RequestData(RNumber 1.)
+    r0.AsBoolean() |> should equal false
+    r1.AsBoolean() |> should equal true
+
+[<Fact>]
+let ``RequestData RNumber other than 0/1 as boolean should return None`` () =
+    let r = RequestData(RNumber 2.)
+    r.AsBooleanOption() |> should equal None
+
+[<Fact>]
+let ``RequestData invalid Guid string`` () =
+    let r = RequestData(RString "not-a-valid-guid")
+    r.AsGuidOption() |> should equal None
+    r.AsGuid() |> should equal Guid.Empty
+
+[<Fact>]
+let ``RequestData invalid TimeSpan string`` () =
+    let r = RequestData(RString "not-a-timespan")
+    r.AsTimeSpanOption() |> should equal None
+    r.AsTimeSpan() |> should equal TimeSpan.MinValue
+
+[<Fact>]
+let ``RequestData Get vs TryGet difference`` () =
+    let r = RequestData(RObject [ "name", RString "John" ])
+    let getResult = r.Get "missing"
+    let tryResult = r.TryGet "missing"
+    getResult.AsString() |> should equal ""  // Get returns Empty
+    tryResult |> should equal None  // TryGet returns None
+
+[<Fact>]
+let ``RequestData custom default values`` () =
+    let r = RequestData(RString "invalid")
+    r.AsInt32(defaultValue = 999) |> should equal 999
+    r.AsString(defaultValue = "default") |> should equal "invalid"
+    r.AsBoolean(defaultValue = true) |> should equal true
