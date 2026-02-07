@@ -11,6 +11,9 @@ open Microsoft.Extensions.Primitives
 open Microsoft.Net.Http.Headers
 
 module Multipart =
+    [<Literal>]
+    let DefaultMaxFileSize = 32L * 1024L * 1024L // 32mb
+
     type private MultipartSectionData =
         | NoMultipartData
         | FormValueData of key : string * value : string
@@ -29,12 +32,31 @@ module Multipart =
             | false, _     -> None
             | true, parsed -> Some parsed
 
-        member private x.StreamSectionAsync(ct : CancellationToken) =
+        member private x.StreamSectionAsync(ct : CancellationToken, maxFileSize : int64) =
             task {
                 match MultipartSection.TryGetContentDisposition(x) with
-                | Some cd when cd.IsFileDisposition() ->
+                | Some cd when cd.IsFileDisposition() && cd.FileName.HasValue && cd.Name.HasValue  ->
+
                     let str = new MemoryStream()
-                    do! x.Body.CopyToAsync(str, ct)
+                    // do! x.Body.CopyToAsync(str, ct)
+
+                    // let safeFileName = WebUtility.HtmlEncode cd.FileName.Value
+                    // let file = new FormFile(str, int64 0, str.Length, cd.Name.Value, safeFileName)
+                    // Stream with size check to avoid unbounded memory growth
+
+                    let mutable bytesRead = 0L
+                    let buffer = Array.zeroCreate 65536 // 64KB chunks
+                    let mutable shouldRead = true
+
+                    while shouldRead do
+                        let! count = x.Body.ReadAsync(buffer, 0, buffer.Length, ct)
+                        match count with
+                        | 0 -> shouldRead <- false
+                        | n ->
+                            bytesRead <- bytesRead + int64 n
+                            if bytesRead > maxFileSize then
+                                raise (InvalidOperationException $"File exceeds maximum size of {maxFileSize} bytes")
+                            do! str.WriteAsync(buffer, 0, n, ct)
 
                     let safeFileName = WebUtility.HtmlEncode cd.FileName.Value
                     let file = new FormFile(str, int64 0, str.Length, cd.Name.Value, safeFileName)
@@ -49,10 +71,10 @@ module Multipart =
 
                     return FormFileData file
 
-                | Some cd when cd.IsFormDisposition() ->
+                | Some cd when cd.IsFormDisposition() && cd.Name.HasValue ->
                     let key = HeaderUtilities.RemoveQuotes(cd.Name).Value
                     let encoding = MultipartSection.GetEncodingFromContentType(x)
-                    use str = new StreamReader(x.Body, encoding, true, 1024, true)
+                    use str = new StreamReader(x.Body, encoding, true, 8192, true)
                     let! requestValue = str.ReadToEndAsync()
 
                     return FormValueData (key, requestValue)
@@ -63,7 +85,8 @@ module Multipart =
             }
 
     type MultipartReader with
-        member x.StreamSectionsAsync(ct : CancellationToken) =
+
+        member x.StreamSectionsAsync(ct : CancellationToken, ?maxFileSize : int64) =
             task {
                 let formData = new KeyValueAccumulator()
                 let formFiles = new FormFileCollection()
@@ -78,7 +101,8 @@ module Multipart =
                         shouldContinue <- false
 
                     | false ->
-                        let! sectionData = section.StreamSectionAsync(ct)
+                        // default to 32mb max file size if not provided
+                        let! sectionData = section.StreamSectionAsync(ct, defaultArg maxFileSize DefaultMaxFileSize)
 
                         match sectionData with
                         | FormFileData file          -> formFiles.Add(file)
@@ -106,12 +130,14 @@ module Multipart =
             | b -> Some b
 
         /// Attempts to stream the HttpRequest body into IFormCollection.
-        member x.StreamFormAsync (ct : CancellationToken) : Task<IFormCollection> =
+        member x.StreamFormAsync (ct : CancellationToken, ?maxFileSize : int64) : Task<IFormCollection> =
             task {
                 match x.IsMultipart(), x.GetBoundary() with
                 | true, Some boundary ->
                     let multipartReader = new MultipartReader(boundary, x.Body)
-                    let! formCollection = multipartReader.StreamSectionsAsync(ct)
+
+                    // default to 32mb max file size if not provided
+                    let! formCollection = multipartReader.StreamSectionsAsync(ct, defaultArg maxFileSize DefaultMaxFileSize)
                     return formCollection
 
                 | _, None
