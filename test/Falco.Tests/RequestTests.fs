@@ -1,14 +1,17 @@
 ﻿module Falco.Tests.Request
 
+open System
 open System.Collections.Generic
 open System.IO
 open System.Text
 open System.Text.Json
 open System.Text.Json.Serialization
+open System.Threading
 open Falco
 open FsUnit.Xunit
 open NSubstitute
 open Xunit
+open Microsoft.AspNetCore.Authentication
 open Microsoft.AspNetCore.Routing
 open Microsoft.Net.Http.Headers
 open Microsoft.AspNetCore.Http
@@ -23,12 +26,100 @@ let ``Request.getVerb should return HttpVerb from HttpContext`` () =
     |> should equal GET
 
 [<Fact>]
+let ``Request.getVerb should handle all HTTP methods`` () =
+    let ctx = getHttpContextWriteable false
+
+    ctx.Request.Method <- "POST"
+    Request.getVerb ctx |> should equal POST
+
+    ctx.Request.Method <- "PUT"
+    Request.getVerb ctx |> should equal PUT
+
+    ctx.Request.Method <- "PATCH"
+    Request.getVerb ctx |> should equal PATCH
+
+    ctx.Request.Method <- "DELETE"
+    Request.getVerb ctx |> should equal DELETE
+
+    ctx.Request.Method <- "OPTIONS"
+    Request.getVerb ctx |> should equal OPTIONS
+
+[<Fact>]
+let ``Request.getVerb should return ANY for unknown methods`` () =
+    let ctx = getHttpContextWriteable false
+    ctx.Request.Method <- "CUSTOM"
+
+    Request.getVerb ctx |> should equal ANY
+
+[<Fact>]
+let ``Request.bodyString handler should provide body string`` () =
+    let ctx = getHttpContextWriteable false
+    let bodyContent = "test content"
+    use ms = new MemoryStream(Encoding.UTF8.GetBytes(bodyContent))
+    ctx.Request.Body <- ms
+
+    let handle body : HttpHandler =
+        body |> should equal bodyContent
+        Response.ofEmpty
+
+    Request.bodyString handle ctx
+
+[<Fact>]
+let ``Request.getBodyString should read request body as string`` () =
+    let ctx = getHttpContextWriteable false
+    let bodyContent = "Hello, World!"
+    use ms = new MemoryStream(Encoding.UTF8.GetBytes(bodyContent))
+    ctx.Request.Body <- ms
+
+    task {
+        let! body = Request.getBodyString ctx
+        body |> should equal bodyContent
+    }
+
+[<Fact>]
+let ``Request.getBodyStringOptions should enforce max size limit`` () =
+    let ctx = getHttpContextWriteable false
+    let largeContent = String.replicate (11 * 1024 * 1024) "x"
+    use ms = new MemoryStream(Encoding.UTF8.GetBytes(largeContent))
+    ctx.Request.Body <- ms
+
+    task {
+        let maxSize = 10L * 1024L * 1024L
+        let! ex = Assert.ThrowsAsync<InvalidOperationException>(
+            fun () -> Request.getBodyStringOptions maxSize ctx)
+
+        ex.Message.Contains "exceeds maximum size" |> should equal true
+    }
+
+[<Fact>]
+let ``Request.getBodyString should handle empty body`` () =
+    let ctx = getHttpContextWriteable false
+    use ms = new MemoryStream()
+    ctx.Request.Body <- ms
+
+    task {
+        let! body = Request.getBodyString ctx
+        body |> should equal ""
+    }
+
+[<Fact>]
 let ``Request.getCookies`` () =
     let ctx = getHttpContextWriteable false
     ctx.Request.Cookies <- Map.ofList ["name", "falco"] |> cookieCollection
 
     let cookies= Request.getCookies ctx
     cookies?name.AsString() |> should equal "falco"
+
+[<Fact>]
+let ``Request.getCookies should handle multiple values`` () =
+    let ctx = getHttpContextWriteable false
+    ctx.Request.Cookies <-
+        Map.ofList ["session", "abc123"; "theme", "dark"]
+        |> cookieCollection
+
+    let cookies = Request.getCookies ctx
+    cookies.GetString "session" |> should equal "abc123"
+    cookies.GetString "theme" |> should equal "dark"
 
 [<Fact>]
 let ``Request.getHeaders should work for present and missing header names`` () =
@@ -40,6 +131,15 @@ let ``Request.getHeaders should work for present and missing header names`` () =
 
     headers.GetString HeaderNames.Server |> should equal serverName
     headers.TryGetString "missing" |> should equal None
+
+[<Fact>]
+let ``Request.getHeaders should be case-insensitive`` () =
+    let ctx = getHttpContextWriteable false
+    ctx.Request.Headers.Add("X-Custom-Header", StringValues("value123"))
+
+    let headers = Request.getHeaders ctx
+    headers.GetString "x-custom-header" |> should equal "value123"
+    headers.GetString "X-CUSTOM-HEADER" |> should equal "value123"
 
 [<Fact>]
 let ``Request.getRouteValues should return Map<string, string> from HttpContext`` () =
@@ -69,99 +169,39 @@ let ``Request.getRoute should preserve large int64 values as strings`` () =
     |> should equal 9223372036854775807L
 
 [<Fact>]
-let ``Request.mapJson`` () =
+let ``Request.getQuery should exclude route values`` () =
     let ctx = getHttpContextWriteable false
-    use ms = new MemoryStream(Encoding.UTF8.GetBytes("{\"name\":\"falco\"}"))
-    ctx.Request.ContentLength.Returns(13L) |> ignore
-    ctx.Request.Body.Returns(ms) |> ignore
+    ctx.Request.RouteValues <- RouteValueDictionary({|id="123"|})
 
-    let handle json : HttpHandler =
-        json.Name |> should equal "falco"
-        Response.ofEmpty
-
-    Request.mapJson handle ctx
-
-[<Fact>]
-let ``Request.mapJsonOption`` () =
-    let ctx = getHttpContextWriteable false
-    use ms = new MemoryStream(Encoding.UTF8.GetBytes("{\"name\":\"falco\",\"age\":null}"))
-    ctx.Request.ContentLength.Returns(22L) |> ignore
-    ctx.Request.Body.Returns(ms) |> ignore
-
-    let handle json : HttpHandler =
-        json.Name |> should equal "falco"
-        Response.ofEmpty
-
-    let options = JsonSerializerOptions()
-    options.AllowTrailingCommas <- true
-    options.PropertyNameCaseInsensitive <- true
-    options.DefaultIgnoreCondition <- JsonIgnoreCondition.WhenWritingNull
-
-    Request.mapJsonOptions options handle ctx
-
-[<Fact>]
-let ``Request.mapCookies`` () =
-    let ctx = getHttpContextWriteable false
-    ctx.Request.Cookies <- Map.ofList ["name", "falco"] |> cookieCollection
-
-    let handle name : HttpHandler =
-        name |> should equal "falco"
-        Response.ofEmpty
-
-    Request.mapCookies (fun r -> r.GetString "name") handle ctx
-
-[<Fact>]
-let ``Request.mapHeaders`` () =
-    let serverName = "Kestrel"
-    let ctx = getHttpContextWriteable false
-    ctx.Request.Headers.Add(HeaderNames.Server, StringValues(serverName))
-
-    let handle server : HttpHandler =
-        server |> should equal serverName
-        Response.ofEmpty
-
-    Request.mapHeaders (fun r -> r.GetString HeaderNames.Server) handle ctx
-
-[<Fact>]
-let ``Request.mapRoute`` () =
-    let ctx = getHttpContextWriteable false
-    ctx.Request.RouteValues <- RouteValueDictionary({|name="falco"|})
-
-    let handle name : HttpHandler =
-        name |> should equal "falco"
-        Response.ofEmpty
-
-    Request.mapRoute (fun r -> r.GetString "name") handle ctx
-
-[<Fact>]
-let ``Request.mapQuery`` () =
-    let ctx = getHttpContextWriteable false
     let query = Dictionary<string, StringValues>()
-    query.Add("name", StringValues("falco"))
+    query.Add("filter", StringValues("active"))
     ctx.Request.Query <- QueryCollection(query)
 
-    let handle name : HttpHandler =
-        name |> should equal "falco"
-        Response.ofEmpty
-
-    Request.mapQuery (fun c -> c.GetString "name") handle ctx
+    let queryData = Request.getQuery ctx
+    queryData.GetString "filter" |> should equal "active"
+    queryData.TryGetString "id" |> should equal None
 
 [<Fact>]
-let ``Request.mapForm`` () =
+let ``Request.getForm should handle urlencoded form data`` () =
     let ctx = getHttpContextWriteable false
+    ctx.Request.ContentType <- "application/x-www-form-urlencoded"
+
     let form = Dictionary<string, StringValues>()
-    form.Add("name", StringValues("falco"))
-    ctx.Request.ReadFormAsync().Returns(FormCollection(form)) |> ignore
+    form.Add("username", StringValues("john"))
+    form.Add("password", StringValues("secret"))
+    let f = FormCollection(form)
 
-    let handle name : HttpHandler =
-        name |> should equal "falco"
-        Response.ofEmpty
+    ctx.Request.ReadFormAsync().Returns(f) |> ignore
+    ctx.Request.ReadFormAsync(Arg.Any<CancellationToken>()).Returns(f) |> ignore
 
-    Request.mapForm (fun f -> f?name.AsString()) handle ctx |> ignore
-    Request.mapFormSecure (fun f -> f.GetString "name") handle Response.ofEmpty ctx |> ignore
+    task {
+        let! formData = Request.getForm ctx
+        formData.GetString "password" |> should equal "secret"
+        formData.GetString "username" |> should equal "john"
+    }
 
 [<Fact>]
-let ``Request.getForm from Stream`` () =
+let ``Request.getForm should detect multipart form data and stream`` () =
     let ctx = getHttpContextWriteable false
     let body =
         "--9051914041544843365972754266\r\n" +
@@ -188,28 +228,228 @@ let ``Request.getForm from Stream`` () =
     let contentType = "multipart/form-data;boundary=\"9051914041544843365972754266\""
     ctx.Request.ContentType <- contentType
 
-    let handle (requestValue : string, files : IFormFileCollection option) : HttpHandler =
-        requestValue |> should equal "falco"
-        files |> shouldBeSome (fun x ->
-            x.Count |> should equal 2
+    task {
+        let! formData = Request.getForm ctx
+        formData.GetString "name" |> should equal "falco"
+        formData.Files |> Option.map Seq.length |> Option.defaultValue 0 |> should equal 2
 
-            // can we access the files?
-            use ms = new MemoryStream()
-            use st1 = x.[0].OpenReadStream()
-            st1.CopyTo(ms)
+        // read file 1
+        use file1Stream = formData.Files.Value.[0].OpenReadStream()
+        use reader1 = new StreamReader(file1Stream)
+        let! file1Content = reader1.ReadToEndAsync()
+        file1Content |> should equal "Content of a.txt.\r\n"
 
-            ms.SetLength(0)
-            use st2 = x.[1].OpenReadStream()
-            st1.CopyTo(ms))
+        // read file 2
+        use file2Stream = formData.Files.Value.[1].OpenReadStream()
+        use reader2 = new StreamReader(file2Stream)
+        let! file2Content = reader2.ReadToEndAsync()
+        file2Content |> should equal "<!DOCTYPE html><title>Content of a.html.</title>\r\n"
+    }
+
+[<Fact>]
+let ``Request.getJson should deserialize with case insensitive property names`` () =
+    let ctx = getHttpContextWriteable false
+    use ms = new MemoryStream(Encoding.UTF8.GetBytes "{\"NAME\":\"falco\"}")
+    ctx.Request.Body <- ms
+
+    task {
+        let! json = Request.getJson ctx
+        json.Name |> should equal "falco"
+    }
+
+[<Fact>]
+let ``Request.getJson should allow trailing commas`` () =
+    let ctx = getHttpContextWriteable false
+    use ms = new MemoryStream(Encoding.UTF8.GetBytes "{\"name\":\"falco\",}")
+    ctx.Request.Body <- ms
+
+    task {
+        let! json = Request.getJson ctx
+        json.Name |> should equal "falco"
+    }
+
+[<Fact>]
+let ``Request.mapJson`` () =
+    let ctx = getHttpContextWriteable false
+    use ms = new MemoryStream(Encoding.UTF8.GetBytes "{\"name\":\"falco\"}")
+    ctx.Request.ContentLength.Returns(13L) |> ignore
+    ctx.Request.Body.Returns(ms) |> ignore
+
+    let handle json : HttpHandler =
+        json.Name |> should equal "falco"
         Response.ofEmpty
 
-    Request.mapForm (fun f -> f.GetString "name", f.Files) handle ctx |> ignore
-    Request.mapFormSecure (fun f -> f.GetString "name", f.Files) handle Response.ofEmpty ctx |> ignore
+    task {
+        do! Request.mapJson handle ctx
+    }
+
+[<Fact>]
+let ``Request.mapJson should handle empty body`` () =
+    let ctx = getHttpContextWriteable false
+    use ms = new MemoryStream()
+    ctx.Request.Body <- ms
+
+    let handle json : HttpHandler =
+        json.Name |> should equal null
+        Response.ofEmpty
+
+    task {
+        do! Request.mapJson handle ctx
+    }
+
+[<Fact>]
+let ``Request.mapJsonOption`` () =
+    let ctx = getHttpContextWriteable false
+    use ms = new MemoryStream(Encoding.UTF8.GetBytes "{\"name\":\"falco\",\"age\":null}")
+    ctx.Request.ContentLength.Returns 22L |> ignore
+    ctx.Request.Body.Returns(ms) |> ignore
+
+    let handle json : HttpHandler =
+        json.Name |> should equal "falco"
+        Response.ofEmpty
+
+    let options = JsonSerializerOptions()
+    options.AllowTrailingCommas <- true
+    options.PropertyNameCaseInsensitive <- true
+    options.DefaultIgnoreCondition <- JsonIgnoreCondition.WhenWritingNull
+
+    task {
+        do! Request.mapJsonOptions options handle ctx
+    }
+
+[<Fact>]
+let ``Request.mapJsonOptions with null value should deserialize`` () =
+    let ctx = getHttpContextWriteable false
+    use ms = new MemoryStream(Encoding.UTF8.GetBytes "{\"name\":null}")
+    ctx.Request.Body <- ms
+
+    let handle json : HttpHandler =
+        json.Name |> should equal null
+        Response.ofEmpty
+
+    let options = JsonSerializerOptions(PropertyNameCaseInsensitive = true)
+
+    task {
+        do! Request.mapJsonOptions options handle ctx
+    }
+
+[<Fact>]
+let ``Request.mapCookies`` () =
+    let ctx = getHttpContextWriteable false
+    ctx.Request.Cookies <- Map.ofList ["name", "falco"] |> cookieCollection
+
+    let handle name : HttpHandler =
+        name |> should equal "falco"
+        Response.ofEmpty
+
+    task {
+        do! Request.mapCookies (fun r -> r.GetString "name") handle ctx
+    }
+
+[<Fact>]
+let ``Request.mapHeaders`` () =
+    let serverName = "Kestrel"
+    let ctx = getHttpContextWriteable false
+    ctx.Request.Headers.Add(HeaderNames.Server, StringValues(serverName))
+
+    let handle server : HttpHandler =
+        server |> should equal serverName
+        Response.ofEmpty
+
+    task {
+        do! Request.mapHeaders (fun r -> r.GetString HeaderNames.Server) handle ctx
+    }
+
+[<Fact>]
+let ``Request.mapRoute`` () =
+    let ctx = getHttpContextWriteable false
+    ctx.Request.RouteValues <- RouteValueDictionary {|name="falco"|}
+
+    let handle name : HttpHandler =
+        name |> should equal "falco"
+        Response.ofEmpty
+
+    task {
+        do! Request.mapRoute (fun r -> r.GetString "name") handle ctx
+    }
+
+[<Fact>]
+let ``Request.mapQuery`` () =
+    let ctx = getHttpContextWriteable false
+    let query = Dictionary<string, StringValues>()
+    query.Add("name", StringValues "falco")
+    ctx.Request.Query <- QueryCollection query
+
+    let handle name : HttpHandler =
+        name |> should equal "falco"
+        Response.ofEmpty
+
+    task {
+        do! Request.mapQuery (fun c -> c.GetString "name") handle ctx
+    }
+
+[<Fact>]
+let ``Request.mapForm`` () =
+    let ctx = getHttpContextWriteable false
+    let form = Dictionary<string, StringValues>()
+    form.Add("name", StringValues "falco")
+    let f = FormCollection(form)
+
+    ctx.Request.ReadFormAsync().Returns(f) |> ignore
+    ctx.Request.ReadFormAsync(Arg.Any<CancellationToken>()).Returns(f) |> ignore
+
+    let handle name : HttpHandler =
+        name |> should equal "falco"
+        Response.ofEmpty
+
+    task {
+        do! Request.mapForm (fun f -> f?name.AsString()) handle ctx
+    }
+
+[<Fact>]
+let ``Request.mapFormSecure`` () =
+    let ctx = getHttpContextWriteable false
+    let form = Dictionary<string, StringValues>()
+    form.Add("name", StringValues "falco")
+    let f = FormCollection(form)
+
+    ctx.Request.ReadFormAsync().Returns(f) |> ignore
+    ctx.Request.ReadFormAsync(Arg.Any<CancellationToken>()).Returns(f) |> ignore
+
+    let handle name : HttpHandler =
+        name |> should equal "falco"
+        Response.ofEmpty
+
+    task {
+        do! Request.mapFormSecure (fun f -> f.GetString "name" ) handle Response.ofEmpty ctx
+    }
+
+[<Fact>]
+let ``Request.mapFormSecure should reject invalid CSRF token`` () =
+    let ctx = getHttpContextWriteable false
+    ctx.Request.ContentType <- "application/x-www-form-urlencoded"
+
+    let form = Dictionary<string, StringValues>()
+    form.Add("name", StringValues "falco")
+    let f = FormCollection(form)
+
+    ctx.Request.ReadFormAsync().Returns(f) |> ignore
+    ctx.Request.ReadFormAsync(Arg.Any<CancellationToken>()).Returns(f) |> ignore
+
+    // Mock CSRF validation to fail
+    ctx.Request.Cookies <- Map.empty |> cookieCollection
+
+    let handleOk _ = Response.ofEmpty
+    let handleInvalidToken : HttpHandler = fun ctx ->
+        ctx.Response.StatusCode <- 403
+        Response.ofEmpty ctx
+
+    Request.mapFormSecure (fun f -> f.GetString "name") handleOk handleInvalidToken ctx |> ignore
 
 [<Fact>]
 let ``Request.mapJson Transfer-Encoding: chunked`` () =
     let ctx = getHttpContextWriteable false
-    use ms = new MemoryStream(Encoding.UTF8.GetBytes("{\"name\":\"falco\"}"))
+    use ms = new MemoryStream(Encoding.UTF8.GetBytes "{\"name\":\"falco\"}")
     // Simulate chunked transfer encoding
     ctx.Request.Headers.Add(HeaderNames.TransferEncoding, "chunked")
     ctx.Request.Headers.Add(HeaderNames.ContentType, "application/json")
@@ -220,4 +460,79 @@ let ``Request.mapJson Transfer-Encoding: chunked`` () =
         json.Name |> should equal "falco"
         Response.ofEmpty
 
-    Request.mapJson handle ctx
+    task {
+        do! Request.mapJson handle ctx
+    }
+
+[<Fact>]
+let ``Request.authenticate should call AuthenticateAsync`` () =
+    let ctx = getHttpContextWriteable true
+
+    let handle (result: AuthenticateResult) : HttpHandler =
+        result.Succeeded |> should equal true
+        Response.ofEmpty
+
+    task {
+        do! Request.authenticate AuthScheme handle ctx
+    }
+
+[<Fact>]
+let ``Request.ifAuthenticated should allow authenticated users`` () =
+    let ctx = getHttpContextWriteable true
+
+    let mutable visited = false
+
+    let handle : HttpHandler = fun ctx ->
+        visited <- true
+        Response.ofEmpty ctx
+
+    task {
+        do! Request.ifAuthenticated AuthScheme handle ctx
+        visited |> should equal true
+    }
+
+
+[<Fact>]
+let ``Request.ifNotAuthenticated should block authenticated users`` () =
+    let ctx = getHttpContextWriteable false
+
+    let mutable visited = false
+
+    let handle : HttpHandler = fun ctx ->
+        visited <- true
+        Response.ofEmpty ctx
+
+    task {
+        do! Request.ifNotAuthenticated AuthScheme handle ctx
+        visited |> should equal true
+    }
+
+[<Fact>]
+let ``Request.ifAuthenticatedInRole should allow users in correct role`` () =
+    let ctx = getHttpContextWriteable true
+
+    let mutable visited = false
+
+    let handle : HttpHandler = fun ctx ->
+        visited <- true
+        Response.ofEmpty ctx
+
+    task {
+        do! Request.ifAuthenticatedInRole AuthScheme (List.take 1 Common.AuthRoles) handle ctx
+        visited |> should equal true
+    }
+
+[<Fact>]
+let ``Request.ifAuthenticatedInRole should block users not in role`` () =
+    let ctx = getHttpContextWriteable true
+
+    let mutable visited = false
+
+    let handle : HttpHandler = fun ctx ->
+        visited <- true
+        Response.ofEmpty ctx
+
+    task {
+        do! Request.ifAuthenticatedInRole AuthScheme ["admin2"] handle ctx
+        visited |> should equal false
+    }

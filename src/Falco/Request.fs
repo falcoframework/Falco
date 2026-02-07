@@ -1,6 +1,7 @@
 [<RequireQualifiedAccess>]
 module Falco.Request
 
+open System
 open System.IO
 open System.Security.Claims
 open System.Text
@@ -12,6 +13,19 @@ open Microsoft.AspNetCore.Http
 open Falco.Multipart
 open Falco.Security
 open Falco.StringUtils
+
+let private defaultMaxBodySize = 32L * 1024L * 1024L // 32mb
+
+let private defaultTaskTimeout =
+    TimeSpan.FromSeconds 30.0
+
+let internal defaultJsonOptions =
+    let options = JsonSerializerOptions()
+    options.AllowTrailingCommas <- true
+    options.PropertyNameCaseInsensitive <- true
+    options.TypeInfoResolver <- JsonSerializerOptions.Default.TypeInfoResolver
+    options.MakeReadOnly() // optimize for reuse
+    options
 
 /// Obtains the HttpVerb of the request
 let getVerb (ctx : HttpContext) : HttpVerb =
@@ -26,12 +40,37 @@ let getVerb (ctx : HttpContext) : HttpVerb =
     | m when strEquals m HttpMethods.Trace   -> TRACE
     | _ -> ANY
 
-/// Streams the request body into a string.
-let getBodyString (ctx : HttpContext) : Task<string> =
+/// Streams the request body into a string, up to the maximum body size defined by `maxBodySize`.
+///
+/// Note: Cannot be called after the body has already been read, and will throw an exception if the body is not seekable and empty.
+let getBodyStringOptions (maxBodySize : int64) (ctx : HttpContext) : Task<string> =
     task {
-        use reader = new StreamReader(ctx.Request.Body, Encoding.UTF8)
-        return! reader.ReadToEndAsync()
+        use tokenSource = new CancellationTokenSource(defaultTaskTimeout)
+        let str = new MemoryStream()
+
+        let mutable bytesRead = 0L
+        let buffer = Array.zeroCreate 65536 // 64KB chunks
+        let mutable shouldRead = true
+
+        while shouldRead do
+            let! count = ctx.Request.Body.ReadAsync(buffer, 0, buffer.Length, tokenSource.Token)
+            match count with
+            | 0 -> shouldRead <- false
+            | n ->
+                bytesRead <- bytesRead + int64 n
+                if bytesRead > maxBodySize then
+                    raise (InvalidOperationException $"Body exceeds maximum size of {maxBodySize} bytes")
+                do! str.WriteAsync(buffer, 0, n, tokenSource.Token)
+
+        str.Seek(0L, SeekOrigin.Begin) |> ignore
+        return Encoding.UTF8.GetString(str.ToArray())
     }
+
+/// Streams the request body into a string, up to a maximum body size of 32mb.
+///
+/// Note: Cannot be called after the body has already been read, and will throw an exception if the body is not seekable and empty.
+let getBodyString (ctx : HttpContext) : Task<string> =
+    getBodyStringOptions defaultMaxBodySize ctx
 
 /// Retrieves the cookie from the request.
 let getCookies (ctx : HttpContext) : RequestData =
@@ -57,17 +96,19 @@ let getQuery (ctx : HttpContext) : RequestData =
 ///
 /// Automatically detects if request is multipart/form-data, and will enable
 /// streaming.
+///
+/// Note: Consumes the request body, so should not be called after body has already been read.
 let getForm (ctx : HttpContext) : Task<FormData> =
     task {
-        use tokenSource = new CancellationTokenSource()
+        use tokenSource = new CancellationTokenSource(defaultTaskTimeout)
 
         let! form =
             if ctx.Request.IsMultipart() then
-                ctx.Request.StreamFormAsync(tokenSource.Token)
+                ctx.Request.StreamFormAsync tokenSource.Token
             else
-                ctx.Request.ReadFormAsync(tokenSource.Token)
+                ctx.Request.ReadFormAsync tokenSource.Token
 
-        let files = if isNull(form.Files) then None else Some form.Files
+        let files = if isNull form.Files then None else Some form.Files
 
         let requestValue = RequestValue.parseForm (form, Some ctx.Request.RouteValues)
 
@@ -94,21 +135,17 @@ let getFormSecure (ctx : HttpContext) : Task<FormData option> =
 let getJsonOptions<'T>
     (options : JsonSerializerOptions)
     (ctx : HttpContext) : Task<'T> = task {
-
-        if ctx.Request.Body.CanSeek && ctx.Request.Body.Length = 0L then
+        try
+            if ctx.Request.Body.CanSeek && ctx.Request.Body.Length = 0L then
+                return JsonSerializer.Deserialize<'T>("{}", options)
+            else
+                use tokenSource = new CancellationTokenSource(defaultTaskTimeout)
+                let! json = JsonSerializer.DeserializeAsync<'T>(ctx.Request.Body, options, tokenSource.Token).AsTask()
+                return json
+        with
+        | :? NotSupportedException as _ ->
             return JsonSerializer.Deserialize<'T>("{}", options)
-        else
-            use tokenSource = new CancellationTokenSource()
-            let! json = JsonSerializer.DeserializeAsync<'T>(ctx.Request.Body, options, tokenSource.Token).AsTask()
-            return json
     }
-
-
-let internal defaultJsonOptions =
-    let options = JsonSerializerOptions()
-    options.AllowTrailingCommas <- true
-    options.PropertyNameCaseInsensitive <- true
-    options
 
 /// Attempts to bind request body using System.Text.Json and default
 /// JsonSerializerOptions.
@@ -243,7 +280,7 @@ let authenticate
     (authScheme : string)
     (next : AuthenticateResult -> HttpHandler) : HttpHandler = fun ctx ->
     task {
-        let! authenticateResult = ctx.AuthenticateAsync(authScheme)
+        let! authenticateResult = ctx.AuthenticateAsync authScheme
         return! next authenticateResult ctx
     }
 
@@ -266,10 +303,10 @@ let ifAuthenticated
 /// and they exist in a list of roles.
 let ifAuthenticatedInRole
     (authScheme : string)
-    (roles : string list)
+    (roles : string seq)
     (handleOk : HttpHandler) : HttpHandler =
     authenticate authScheme (fun authenticateResult ctx ->
-        let isInRole = List.exists authenticateResult.Principal.IsInRole roles
+        let isInRole = Seq.exists authenticateResult.Principal.IsInRole roles
         match authenticateResult.Succeeded, isInRole with
         | true, true ->
             handleOk ctx
