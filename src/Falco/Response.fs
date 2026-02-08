@@ -28,8 +28,9 @@ let withHeaders
 
 /// Sets ContentType header for response.
 let withContentType
-    (contentType : string) : HttpResponseModifier =
-    withHeaders [ HeaderNames.ContentType, contentType ]
+    (contentType : string) : HttpResponseModifier = fun ctx ->
+    ctx.Response.ContentType <- contentType
+    withHeaders [ HeaderNames.ContentType, contentType ] ctx
 
 /// Set StatusCode for response.
 let withStatusCode
@@ -58,6 +59,7 @@ let withCookieOptions
 
 /// Flushes any remaining response headers or data and returns empty response.
 let ofEmpty : HttpHandler = fun ctx ->
+    ctx.Response.ContentLength <- 0
     ctx.Response.CompleteAsync()
 
 type private RedirectType =
@@ -70,35 +72,27 @@ let private redirect
         match redirectType with
         | PermanentlyTo url -> (true, url)
         | TemporarilyTo url -> (false, url)
-    ctx.Response.Redirect(url, permanent)
-    ctx.Response.CompleteAsync()
+
+    task {
+        ctx.Response.Redirect(url, permanent)
+        do! ctx.Response.CompleteAsync()
+    }
 
 /// Returns a redirect (301) to client.
 let redirectPermanently (url: string) =
-    redirect (PermanentlyTo url)
+    withStatusCode 301
+    >> redirect (PermanentlyTo url)
 
 /// Returns a redirect (302) to client.
 let redirectTemporarily (url: string) =
-    redirect (TemporarilyTo url)
-
-let private setContentLength
-    (contentLength : int64)
-    (ctx : HttpContext) =
-    ctx.Response.ContentLength <- contentLength
+    withStatusCode 302
+    >> redirect (TemporarilyTo url)
 
 let private writeBytes
     (bytes : byte[]) : HttpHandler = fun ctx ->
         task {
-            setContentLength bytes.LongLength ctx
+            ctx.Response.ContentLength <- bytes.LongLength
             do! ctx.Response.Body.WriteAsync(bytes, 0, bytes.Length)
-        }
-
-let private writeStream
-    (str : Stream) : HttpHandler = fun ctx ->
-        task {
-            setContentLength str.Length ctx
-            str.Position <- 0
-            do! str.CopyToAsync(ctx.Response.Body)
         }
 
 /// Returns an inline binary (i.e., Byte[]) response with the specified
@@ -110,7 +104,6 @@ let ofBinary
     (headers : (string * string) list)
     (bytes : Byte[]) : HttpHandler =
     let headers = (HeaderNames.ContentDisposition, "inline") :: headers
-
     withContentType contentType
     >> withHeaders headers
     >> writeBytes bytes
@@ -128,7 +121,8 @@ let ofAttachment
     (bytes : Byte[]) : HttpHandler =
     let contentDisposition =
         if StringUtils.strNotEmpty filename then
-            StringUtils.strConcat [ "attachment; filename=\""; filename; "\"" ]
+            let escapedFilename = HeaderUtilities.EscapeAsQuotedString filename
+            StringUtils.strConcat [ "attachment; filename="; string escapedFilename ]
         else "attachment"
 
     let headers = (HeaderNames.ContentDisposition, contentDisposition) :: headers
@@ -141,7 +135,7 @@ let ofAttachment
 let ofString
     (encoding : Encoding)
     (str : string) : HttpHandler =
-    if isNull str then ofEmpty
+    if String.IsNullOrWhiteSpace str then ofEmpty
     else writeBytes (encoding.GetBytes(str))
 
 /// Returns a "text/plain; charset=utf-8" response with provided string to
@@ -193,13 +187,14 @@ let ofFragmentCsrf
 /// serialized object provided to the client.
 let ofJsonOptions
     (options : JsonSerializerOptions)
-    (obj : 'T) : HttpHandler = fun ctx ->
-    task {
+    (obj : 'T) : HttpHandler =
+    withContentType "application/json; charset=utf-8"
+    >> fun ctx -> task {
         use str = new MemoryStream()
         do! JsonSerializer.SerializeAsync(str, obj, options)
-        return!
-            withContentType "application/json; charset=utf-8" ctx
-            |> writeStream str
+        ctx.Response.ContentLength <- str.Length
+        str.Position <- 0
+        do! str.CopyToAsync ctx.Response.Body
     }
 
 /// Returns a "application/json; charset=utf-8" response with the serialized
@@ -213,34 +208,42 @@ let ofJson
 /// 301 redirect to provided URL.
 let signIn
     (authScheme : string)
-    (claimsPrincipal : ClaimsPrincipal) : HttpHandler = fun ctx ->
+    (claimsPrincipal : ClaimsPrincipal) : HttpHandler =
+    withStatusCode 301
+    >> fun ctx ->
     task {
         do! ctx.SignInAsync(authScheme, claimsPrincipal)
     }
 
 /// Signs in claim principal for provided scheme and options then responds with a
-/// 301 redirect to provided URL.
+/// 301 redirect to provided URL (via AuthenticationProperties.RedirectUri).
 let signInOptions
     (authScheme : string)
     (claimsPrincipal : ClaimsPrincipal)
-    (options : AuthenticationProperties) : HttpHandler = fun ctx ->
+    (options : AuthenticationProperties) : HttpHandler =
+    withStatusCode 301
+    >> fun ctx ->
     task {
         do! ctx.SignInAsync(authScheme, claimsPrincipal, options)
     }
 
 /// Signs in claim principal for provided scheme then responds with a 301 redirect
-/// to provided URL.
+/// to provided URL (via AuthenticationProperties.RedirectUri).
 let signInAndRedirect
     (authScheme : string)
     (claimsPrincipal : ClaimsPrincipal)
     (url : string) : HttpHandler =
     let options = AuthenticationProperties(RedirectUri = url)
-    signInOptions authScheme claimsPrincipal options
+    withHeaders [ HeaderNames.Location, url ]
+    >> withStatusCode 301
+    >> signInOptions authScheme claimsPrincipal options
 
 /// Terminates authenticated context for provided scheme then responds with a 301
-/// redirect to provided URL.
+/// redirect to provided URL (via AuthenticationProperties.RedirectUri).
 let signOut
-    (authScheme : string) : HttpHandler = fun ctx ->
+    (authScheme : string) : HttpHandler =
+    withStatusCode 301
+    >> fun ctx ->
     task {
         do! ctx.SignOutAsync(authScheme)
     }
@@ -249,7 +252,9 @@ let signOut
 /// redirect to provided URL.
 let signOutOptions
     (authScheme : string)
-    (options : AuthenticationProperties) : HttpHandler = fun ctx ->
+    (options : AuthenticationProperties) : HttpHandler =
+    withStatusCode 301
+    >> fun ctx ->
     task {
         do! ctx.SignOutAsync(authScheme, options)
     }
@@ -260,7 +265,9 @@ let signOutAndRedirect
     (authScheme : string)
     (url : string) : HttpHandler =
     let options = AuthenticationProperties(RedirectUri = url)
-    signOutOptions authScheme options
+    withHeaders [ HeaderNames.Location, url ]
+    >> withStatusCode 301
+    >> signOutOptions authScheme options
 
 /// Challenges the specified authentication scheme.
 /// An authentication challenge can be issued when an unauthenticated user
@@ -268,7 +275,12 @@ let signOutAndRedirect
 /// forwarded to the authentication handler for use after authentication succeeds.
 let challengeOptions
     (authScheme : string)
-    (options : AuthenticationProperties) : HttpHandler = fun ctx ->
+    (options : AuthenticationProperties) : HttpHandler =
+    withHeaders [
+        HeaderNames.WWWAuthenticate, authScheme
+        if not (String.IsNullOrEmpty(options.RedirectUri)) then
+            HeaderNames.Location, options.RedirectUri
+    ] >> fun ctx ->
     task {
         do! ctx.ChallengeAsync(authScheme, options)
     }
