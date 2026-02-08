@@ -15,6 +15,7 @@
     <Compile Include="RequestTests.fs" />
     <Compile Include="ResponseTests.fs" />
     <Compile Include="RoutingTests.fs" />
+    <Compile Include="WebApplicationTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
