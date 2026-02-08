@@ -22,7 +22,7 @@ let ``route function should return valid HttpEndpoint`` () =
     let endpoint = route routeVerb routePattern emptyHandler
     endpoint.Pattern |> should equal routePattern
 
-    let (verb, handler) = Seq.head endpoint.Handlers
+    let verb, handler = Seq.head endpoint.Handlers
     verb |> should equal routeVerb
     handler |> should be instanceOfType<HttpHandler>
 
