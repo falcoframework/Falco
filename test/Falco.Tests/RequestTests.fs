@@ -250,6 +250,7 @@ let ``Request.getForm should detect multipart form data and stream`` () =
 let ``Request.getJson should deserialize with case insensitive property names`` () =
     let ctx = getHttpContextWriteable false
     use ms = new MemoryStream(Encoding.UTF8.GetBytes "{\"NAME\":\"falco\"}")
+    ctx.Request.ContentType <- "application/json"
     ctx.Request.Body <- ms
 
     task {
@@ -261,6 +262,7 @@ let ``Request.getJson should deserialize with case insensitive property names`` 
 let ``Request.getJson should allow trailing commas`` () =
     let ctx = getHttpContextWriteable false
     use ms = new MemoryStream(Encoding.UTF8.GetBytes "{\"name\":\"falco\",}")
+    ctx.Request.ContentType <- "application/json"
     ctx.Request.Body <- ms
 
     task {
@@ -272,6 +274,7 @@ let ``Request.getJson should allow trailing commas`` () =
 let ``Request.mapJson`` () =
     let ctx = getHttpContextWriteable false
     use ms = new MemoryStream(Encoding.UTF8.GetBytes "{\"name\":\"falco\"}")
+    ctx.Request.ContentType <- "application/json"
     ctx.Request.ContentLength.Returns(13L) |> ignore
     ctx.Request.Body.Returns(ms) |> ignore
 
@@ -287,6 +290,7 @@ let ``Request.mapJson`` () =
 let ``Request.mapJson should handle empty body`` () =
     let ctx = getHttpContextWriteable false
     use ms = new MemoryStream()
+    ctx.Request.ContentType <- "application/json"
     ctx.Request.Body <- ms
 
     let handle json : HttpHandler =
@@ -301,6 +305,7 @@ let ``Request.mapJson should handle empty body`` () =
 let ``Request.mapJsonOption`` () =
     let ctx = getHttpContextWriteable false
     use ms = new MemoryStream(Encoding.UTF8.GetBytes "{\"name\":\"falco\",\"age\":null}")
+    ctx.Request.ContentType <- "application/json"
     ctx.Request.ContentLength.Returns 22L |> ignore
     ctx.Request.Body.Returns(ms) |> ignore
 
@@ -331,6 +336,24 @@ let ``Request.mapJsonOptions with null value should deserialize`` () =
 
     task {
         do! Request.mapJsonOptions options handle ctx
+    }
+
+[<Fact>]
+let ``Request.mapJson Transfer-Encoding: chunked`` () =
+    let ctx = getHttpContextWriteable false
+    use ms = new MemoryStream(Encoding.UTF8.GetBytes "{\"name\":\"falco\"}")
+    ctx.Request.ContentType <- "application/json"
+    // Simulate chunked transfer encoding
+    ctx.Request.Headers.Add(HeaderNames.TransferEncoding, "chunked")
+
+    ctx.Request.Body.Returns(ms) |> ignore
+
+    let handle json : HttpHandler =
+        json.Name |> should equal "falco"
+        Response.ofEmpty
+
+    task {
+        do! Request.mapJson handle ctx
     }
 
 [<Fact>]
@@ -445,24 +468,6 @@ let ``Request.mapFormSecure should reject invalid CSRF token`` () =
         Response.ofEmpty ctx
 
     Request.mapFormSecure (fun f -> f.GetString "name") handleOk handleInvalidToken ctx |> ignore
-
-[<Fact>]
-let ``Request.mapJson Transfer-Encoding: chunked`` () =
-    let ctx = getHttpContextWriteable false
-    use ms = new MemoryStream(Encoding.UTF8.GetBytes "{\"name\":\"falco\"}")
-    // Simulate chunked transfer encoding
-    ctx.Request.Headers.Add(HeaderNames.TransferEncoding, "chunked")
-    ctx.Request.Headers.Add(HeaderNames.ContentType, "application/json")
-
-    ctx.Request.Body.Returns(ms) |> ignore
-
-    let handle json : HttpHandler =
-        json.Name |> should equal "falco"
-        Response.ofEmpty
-
-    task {
-        do! Request.mapJson handle ctx
-    }
 
 [<Fact>]
 let ``Request.authenticate should call AuthenticateAsync`` () =

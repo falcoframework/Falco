@@ -136,7 +136,10 @@ let getJsonOptions<'T>
     (options : JsonSerializerOptions)
     (ctx : HttpContext) : Task<'T> = task {
         try
-            if ctx.Request.Body.CanSeek && ctx.Request.Body.Length = 0L then
+            if not (ctx.Request.HasJsonContentType()) then
+                ctx.Response.StatusCode <- StatusCodes.Status415UnsupportedMediaType
+                return JsonSerializer.Deserialize<'T>("{}", options)
+            elif ctx.Request.Body.CanSeek && ctx.Request.Body.Length = 0L then
                 return JsonSerializer.Deserialize<'T>("{}", options)
             else
                 use tokenSource = new CancellationTokenSource(defaultTaskTimeout)
