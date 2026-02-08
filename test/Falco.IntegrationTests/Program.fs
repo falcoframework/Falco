@@ -85,4 +85,75 @@ module Tests =
         let content = response.Content.ReadAsStringAsync().Result
         Assert.Equal("""{}""", content)
 
+    [<Fact>]
+    let ``GET /hello/ (trailing slash) returns default greeting`` () =
+        use client = factory.CreateClient()
+        let content = client.GetStringAsync("/hello/").Result
+        Assert.Equal("""{"Message":"Hello world!"}""", content)
+
+    [<Fact>]
+    let ``GET /hello/{name} decodes url-encoded name`` () =
+        use client = factory.CreateClient()
+        let content = client.GetStringAsync("/hello/John%20Doe").Result
+        Assert.Equal("""{"Message":"Hello John Doe!"}""", content)
+
+    [<Fact>]
+    let ``GET /hello/{name}?age=invalid ignores invalid age`` () =
+        use client = factory.CreateClient()
+        let content = client.GetStringAsync("/hello/John?age=not-a-number").Result
+        Assert.Equal("""{"Message":"Hello John!"}""", content)
+
+    [<Fact>]
+    let ``POST /hello/{name} with invalid age ignores age`` () =
+        use client = factory.CreateClient()
+        use form = new FormUrlEncodedContent(dict [ ("age", "not-a-number") ])
+        let response = client.PostAsync("/hello/Jane", form).Result
+        let content = response.Content.ReadAsStringAsync().Result
+        Assert.Equal("""{"Message":"Hello Jane!"}""", content)
+
+    [<Fact>]
+    let ``POST /hello with age but no name uses default world`` () =
+        use client = factory.CreateClient()
+        use form = new FormUrlEncodedContent(dict [ ("age", "7") ])
+        let response = client.PostAsync("/hello", form).Result
+        let content = response.Content.ReadAsStringAsync().Result
+        Assert.Equal("""{"Message":"Hello world, you are 7 years old!"}""", content)
+
+    [<Fact>]
+    let ``POST /api/message with non-json content type should fail`` () =
+        use client = factory.CreateClient()
+        use body = new StringContent("Message=Hello", Encoding.UTF8, "text/plain")
+        let response = client.PostAsync("/api/message", body).Result
+        Assert.False(response.IsSuccessStatusCode)
+
+    [<Fact>]
+    let ``POST /api/message echoes input`` () =
+        use client = factory.CreateClient()
+        let payload = """{"Message":"Hello /api/message","Extra":"ignored"}"""
+        use body = new StringContent(payload, Encoding.UTF8, "application/json")
+        let response = client.PostAsync("/api/message", body).Result
+        let content = response.Content.ReadAsStringAsync().Result
+        Assert.Equal("""{"Message":"Hello /api/message","Extra":"ignored"}""", content)
+
+    [<Fact>]
+    let ``GET /json returns application/json content type`` () =
+        use client = factory.CreateClient()
+        let response = client.GetAsync("/json").Result
+        let ct = response.Content.Headers.ContentType.ToString()
+        Assert.Contains("application/json", ct)
+
+    [<Fact>]
+    let ``GET /hello returns application/json content type`` () =
+        use client = factory.CreateClient()
+        let response = client.GetAsync("/hello").Result
+        let ct = response.Content.Headers.ContentType.ToString()
+        Assert.Contains("application/json", ct)
+
+    [<Fact>]
+    let ``GET / returns text/plain content type`` () =
+        use client = factory.CreateClient()
+        let response = client.GetAsync("/").Result
+        let ct = response.Content.Headers.ContentType.ToString()
+        Assert.Contains("text/plain", ct)
+
 module Program = let [<EntryPoint>] main _ = 0
