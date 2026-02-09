@@ -19,6 +19,10 @@ open Microsoft.Net.Http.Headers
 // ------------
 
 /// Sets multiple headers for response.
+///
+/// Headers provided will replace any existing headers with the same name.
+///
+/// - `headers` - A list of header name and value pairs to add to the response.
 let withHeaders
     (headers : (string * string) list) : HttpResponseModifier = fun ctx ->
     headers
@@ -27,18 +31,25 @@ let withHeaders
     ctx
 
 /// Sets ContentType header for response.
+///
+/// - `contentType` - The value to set for the Content-Type header.
 let withContentType
     (contentType : string) : HttpResponseModifier = fun ctx ->
     ctx.Response.ContentType <- contentType
     withHeaders [ HeaderNames.ContentType, contentType ] ctx
 
 /// Set StatusCode for response.
+///
+/// - `statusCode` - The HTTP status code to set for the response.
 let withStatusCode
     (statusCode : int) : HttpResponseModifier = fun ctx ->
     ctx.Response.StatusCode <- statusCode
     ctx
 
 /// Adds cookie to response.
+///
+/// - `key` - The name of the cookie to add to the response.
+/// - `value` - The value of the cookie to add to the response.
 let withCookie
     (key : string)
     (value : string) : HttpResponseModifier = fun ctx ->
@@ -46,6 +57,10 @@ let withCookie
     ctx
 
 /// Adds a configured cookie to response, via CookieOptions.
+///
+/// - `options` - The CookieOptions to apply when adding the cookie to the response.
+/// - `key` - The name of the cookie to add to the response.
+/// - `value` - The value of the cookie to add to the response.
 let withCookieOptions
     (options : CookieOptions)
     (key : string)
@@ -79,11 +94,15 @@ let private redirect
     }
 
 /// Returns a redirect (301) to client.
+///
+/// - `url` - The URL to which the client will be redirected.
 let redirectPermanently (url: string) =
     withStatusCode 301
     >> redirect (PermanentlyTo url)
 
 /// Returns a redirect (302) to client.
+///
+/// - `url` - The URL to which the client will be redirected.
 let redirectTemporarily (url: string) =
     withStatusCode 302
     >> redirect (TemporarilyTo url)
@@ -99,6 +118,10 @@ let private writeBytes
 /// Content-Type.
 ///
 /// Note: Automatically sets "content-disposition: inline".
+///
+/// - `contentType` - The value to set for the Content-Type header.
+/// - `headers` - A list of additional header name and value pairs to add to the response.
+/// - `bytes` - The binary content to write to the response body.///
 let ofBinary
     (contentType : string)
     (headers : (string * string) list)
@@ -113,6 +136,11 @@ let ofBinary
 ///
 /// Note: Automatically sets "content-disposition: attachment" and includes
 /// filename if provided.
+///
+/// - `filename` - The name of the file to be used in the Content-Disposition header. If empty or null, no filename will be included.
+/// - `contentType` - The value to set for the Content-Type header.
+/// - `headers` - A list of additional header name and value pairs to add to the response.
+/// - `bytes` - The binary content to write to the response body.
 let ofAttachment
     (filename : string)
     (contentType : string)
@@ -132,27 +160,34 @@ let ofAttachment
     >> writeBytes bytes
 
 /// Writes string to response body with provided encoding.
+///
+/// - `encoding` - The encoding to use when converting the string to bytes for the response body.
+/// - `str` - The string content to write to the response body. If null, empty, or whitespace, an empty response will be returned.
 let ofString
     (encoding : Encoding)
     (str : string) : HttpHandler =
     if String.IsNullOrWhiteSpace str then ofEmpty
     else writeBytes (encoding.GetBytes(str))
 
-/// Returns a "text/plain; charset=utf-8" response with provided string to
-/// client.
+/// Returns a "text/plain; charset=utf-8" response with provided string to client.
+///
+/// - `str` - The string content to write to the response body. If null, empty, or whitespace, an empty response will be returned.
 let ofPlainText
     (str : string) : HttpHandler =
     withContentType "text/plain; charset=utf-8"
     >> ofString Encoding.UTF8 str
 
-/// Returns a "text/html; charset=utf-8" response with provided HTML string to
-/// client.
+/// Returns a "text/html; charset=utf-8" response with provided HTML string to client.
+///
+/// - `html` - The HTML string content to write to the response body. If null, empty, or whitespace, an empty response will be returned.
 let ofHtmlString
     (html : string) : HttpHandler =
     withContentType "text/html; charset=utf-8"
     >> ofString Encoding.UTF8 html
 
 /// Returns a "text/html; charset=utf-8" response with provided HTML to client.
+///
+/// - `html` - The HTML content to write to the response body. If null, empty, or whitespace, an empty response will be returned.
 let ofHtml
     (html : XmlNode) : HttpHandler =
     ofHtmlString (renderHtml html)
@@ -163,6 +198,8 @@ let private withCsrfToken handleToken : HttpHandler = fun ctx ->
 
 /// Returns a CSRF token-dependant "text/html; charset=utf-8" response with
 /// provided HTML to client.
+///
+/// - `view` - A function that takes an AntiforgeryTokenSet and returns the HTML content to write to the response body. If the returned HTML is null, empty, or whitespace, an empty response will be returned.
 let ofHtmlCsrf
     (view : AntiforgeryTokenSet -> XmlNode) : HttpHandler =
     withCsrfToken (fun token -> token |> view |> ofHtml)
@@ -170,6 +207,9 @@ let ofHtmlCsrf
 /// Returns a "text/html; charset=utf-8" response with provided HTML fragment,
 /// if found, to client. If no element with the provided id is found, an empty
 /// string is returned.
+///
+/// - `id` - The id of the HTML element to render and write to the response body.
+/// - `html` - The HTML content to search for the element with the specified id.
 let ofFragment
     (id : string)
     (html : XmlNode) : HttpHandler =
@@ -178,6 +218,9 @@ let ofFragment
 /// Returns a CSRF token-dependant "text/html; charset=utf-8" response with
 /// provided HTML fragment, if found, to client. If no element with the
 /// provided id is found, an empty string is returned.
+///
+/// - `id` - The id of the HTML element to render and write to the response body.
+/// - `view` - A function that takes an AntiforgeryTokenSet and returns the HTML content to search for the element with the specified id.
 let ofFragmentCsrf
     (id : string)
     (view : AntiforgeryTokenSet -> XmlNode) : HttpHandler =
@@ -185,6 +228,9 @@ let ofFragmentCsrf
 
 /// Returns an optioned "application/json; charset=utf-8" response with the
 /// serialized object provided to the client.
+///
+/// - `options` - The JsonSerializerOptions to use when serializing the object to JSON.
+/// - `obj` - The object to serialize to JSON and write to the response body.
 let ofJsonOptions
     (options : JsonSerializerOptions)
     (obj : 'T) : HttpHandler =
@@ -199,13 +245,18 @@ let ofJsonOptions
 
 /// Returns a "application/json; charset=utf-8" response with the serialized
 /// object provided to the client.
+///
+/// - `obj` - The object to serialize to JSON and write to the response body.
 let ofJson
     (obj : 'T) : HttpHandler =
     withContentType "application/json; charset=utf-8"
     >> ofJsonOptions Request.defaultJsonOptions obj
 
-/// Signs in claim principal for provided scheme then responds with a
-/// 301 redirect to provided URL.
+/// Signs in claim principal for provided scheme then responds with a 301 redirect
+/// to provided URL.
+///
+/// - `authScheme` - The name of the authentication scheme to use when signing in the claim principal.
+/// - `claimsPrincipal` - The ClaimsPrincipal to sign in for the specified authentication scheme.
 let signIn
     (authScheme : string)
     (claimsPrincipal : ClaimsPrincipal) : HttpHandler = fun ctx ->
@@ -215,6 +266,10 @@ let signIn
 
 /// Signs in claim principal for provided scheme and options then responds with a
 /// 301 redirect to provided URL (via AuthenticationProperties.RedirectUri).
+///
+/// - `authScheme` - The name of the authentication scheme to use when signing in the claim principal.
+/// - `claimsPrincipal` - The ClaimsPrincipal to sign in for the specified authentication scheme.
+/// - `options` - The AuthenticationProperties to use when signing in the claim principal, which may include a RedirectUri for the post-sign-in redirect URL.
 let signInOptions
     (authScheme : string)
     (claimsPrincipal : ClaimsPrincipal)
@@ -230,6 +285,10 @@ let signInOptions
 
 /// Signs in claim principal for provided scheme then responds with a 301 redirect
 /// to provided URL (via AuthenticationProperties.RedirectUri).
+///
+/// - `authScheme` - The name of the authentication scheme to use when signing in the claim principal.
+/// - `claimsPrincipal` - The ClaimsPrincipal to sign in for the specified authentication scheme.
+/// - `url` - The URL to which the client will be redirected after signing in, which will be set in the AuthenticationProperties.RedirectUri.
 let signInAndRedirect
     (authScheme : string)
     (claimsPrincipal : ClaimsPrincipal)
@@ -239,6 +298,8 @@ let signInAndRedirect
 
 /// Terminates authenticated context for provided scheme then responds with a 301
 /// redirect to provided URL (via AuthenticationProperties.RedirectUri).
+///
+/// - `authScheme` - The name of the authentication scheme to use when signing out the authenticated context.
 let signOut
     (authScheme : string) : HttpHandler = fun ctx ->
     task {
@@ -247,6 +308,9 @@ let signOut
 
 /// Terminates authenticated context for provided scheme then responds with a 301
 /// redirect to provided URL.
+///
+/// - `authScheme` - The name of the authentication scheme to use when signing out the authenticated context.
+/// - `options` - The AuthenticationProperties to use when signing out, which may include a RedirectUri for the post-sign-out redirect URL.
 let signOutOptions
     (authScheme : string)
     (options : AuthenticationProperties) : HttpHandler =
@@ -261,6 +325,9 @@ let signOutOptions
 
 /// Terminates authenticated context for provided scheme then responds with a 301
 /// redirect to provided URL.
+///
+/// - `authScheme` - The name of the authentication scheme to use when signing out the authenticated context.
+/// - `url` - The URL to which the client will be redirected after signing out, which will be set in the AuthenticationProperties.RedirectUri.
 let signOutAndRedirect
     (authScheme : string)
     (url : string) : HttpHandler =
@@ -271,6 +338,13 @@ let signOutAndRedirect
 /// An authentication challenge can be issued when an unauthenticated user
 /// requests an endpoint that requires authentication. Then given redirectUri is
 /// forwarded to the authentication handler for use after authentication succeeds.
+///
+/// Note: If options.RedirectUri is provided, a 401 status code and Location header
+/// will be included in the response, with the Location header set to the RedirectUri.
+/// Otherwise, no status code or Location header will be included in the response.
+///
+/// - `authScheme` - The name of the authentication scheme to challenge.
+/// - `options` - The AuthenticationProperties to use when challenging, which may include a RedirectUri for the post-challenge redirect URL.
 let challengeOptions
     (authScheme : string)
     (options : AuthenticationProperties) : HttpHandler =
@@ -288,6 +362,11 @@ let challengeOptions
 /// An authentication challenge can be issued when an unauthenticated user
 /// requests an endpoint that requires authentication. Then given redirectUri is
 /// forwarded to the authentication handler for use after authentication succeeds.
+///
+/// Note: A 401 status code and Location header will be included in the response, with the Location header set to the provided redirectUri.
+///
+/// - `authScheme` - The name of the authentication scheme to challenge.
+/// - `redirectUri` - The URL to which the client will be redirected after the challenge, which will be set in the AuthenticationProperties.RedirectUri.
 let challengeAndRedirect
     (authScheme : string)
     (redirectUri : string) : HttpHandler =

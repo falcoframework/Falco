@@ -43,6 +43,39 @@ let ``Response.withHeaders should set header`` () =
     }
 
 [<Fact>]
+let ``Response.withHeaders should set multiple headers`` () =
+    let ctx = getHttpContextWriteable false
+
+    let headers =
+        [ HeaderNames.Server, "Kestrel"
+          HeaderNames.CacheControl, "no-cache" ]
+
+    task {
+        do! ctx
+            |> (Response.withHeaders headers >> Response.ofEmpty)
+
+        ctx.Response.Headers.[HeaderNames.Server][0]
+        |> should equal "Kestrel"
+
+        ctx.Response.Headers.[HeaderNames.CacheControl][0]
+        |> should equal "no-cache"
+    }
+
+[<Fact>]
+let ``Response.withHeaders should overwrite existing header`` () =
+    let ctx = getHttpContextWriteable false
+    ctx.Response.Headers.[HeaderNames.Server] <- "InitialValue"
+    let serverName = "Kestrel"
+
+    task {
+        do! ctx
+            |> (Response.withHeaders [ HeaderNames.Server, serverName ] >> Response.ofEmpty)
+
+        ctx.Response.Headers.[HeaderNames.Server][0]
+        |> should equal serverName
+    }
+
+[<Fact>]
 let ``Response.withContentType should set header`` () =
     let contentType = "text/plain; charset=utf-8"
     let ctx = getHttpContextWriteable false

@@ -54,8 +54,9 @@ let getHttpContextWriteable (authenticated : bool) =
     req.RouteValues.Returns(Substitute.For<RouteValueDictionary>()) |> ignore
 
     let resp = Substitute.For<HttpResponse>()
-    let respBody = new MemoryStream()
     resp.Headers.Returns(Substitute.For<HeaderDictionary>()) |> ignore
+
+    let respBody = new MemoryStream()
     resp.BodyWriter.Returns(PipeWriter.Create respBody) |> ignore
     resp.Body <- respBody
 
