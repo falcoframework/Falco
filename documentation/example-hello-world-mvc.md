@@ -111,9 +111,13 @@ module Controller =
         let serverException : HttpHandler =
             Response.withStatusCode 500 >>
             Response.ofHtml (View.layout [ _h1' "Server Error" ])
+
+        let endpoints =
+            [ get "/error/not-found" notFound
+              get "/error/server-exception" serverException ]
 ```
 
-Here we see the [`HttpResponseModifier`](repsonse.md#response-modifiers) at play, which set the status code before buffering out the HTML response. We'll reference these pages later when be [build the web server](#web-server).
+Here we see the [`HttpResponseModifier`](repsonse.md#response-modifiers) at play, which set the status code before buffering out the HTML response. We'll reference these pages later when be [build the web server](#web-server). We'll also add explicit endpoints for these, so they can be accessed directly or redirected to.
 
 ## Controller
 
@@ -147,13 +151,13 @@ module Controller =
             let mapRoute (r : RequestData) =
                 r?name.AsString()
 
-            [ get Route.index index
+            [ mapGet Route.index mapRoute index
               mapGet Route.greetPlainText mapRoute plainTextDetail
               mapGet Route.greetJson mapRoute jsonDetail
-              mapGet Route.greetHtml mapRoute htmlDetail ]
+              mapGet Route.greetHtml mapRoute index ]
 ```
 
-You'll notice that the controller defines its own `endpoints`. This associates a route to a handler when passed into Falco (we'll do this later). Defining this within the controller is personal preference. But considering controller actions usually operate against a common URL pattern, it allows a private, reusable route mapping to exist (see `mapRoute`).
+You'll notice that this controller defines its own `endpoints` too. This associates a route to a handler when passed into Falco (we'll do this later). Defining this within the controller is personal preference. But considering controller actions usually operate against a common URL pattern, it allows a private, reusable route mapping to exist (see `mapRoute`).
 
 ## Web Server
 
@@ -172,11 +176,8 @@ module Program =
     open Controller
 
     let endpoints =
-        [ get Route.index GreetingController.index
-          get Route.greetPlainText GreetingController.plainTextDetail
-          get Route.greetJson GreetingController.jsonDetail
-          get Route.greetHtml GreetingController.htmlDetail ]
-
+        ErrorController.endpoints
+        @ GreetingController.endpoints
 
     /// By defining an explicit entry point, we gain access to the command line
     /// arguments which when passed into Falco are used as the creation arguments

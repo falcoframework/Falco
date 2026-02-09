@@ -66,6 +66,10 @@ module Controller =
             Response.withStatusCode 500 >>
             Response.ofHtml (layout [ _h1' "Server Error" ])
 
+        let endpoints =
+            [ get "/error/not-found" notFound
+              get "/error/server-exception" serverException ]
+
     module GreetingController =
         let index name =
             { Name = name }
@@ -92,7 +96,8 @@ module App =
     open Controller
 
     let endpoints =
-        GreetingController.endpoints
+        ErrorController.endpoints
+        @ GreetingController.endpoints
 
 module Program =
     open Controller
