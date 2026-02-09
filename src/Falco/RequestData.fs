@@ -290,11 +290,24 @@ module RequestDataOperators =
         requestData.Get name
 
 [<Sealed>]
-type FormData(requestValue : RequestValue, files : IFormFileCollection option) =
+type FormData(requestValue : RequestValue, files : IFormFileCollection option, ?isValid : bool) =
     inherit RequestData(requestValue)
 
+    static member Empty = FormData(RequestValue.RNull, None, isValid = true)
+
+    static member Invalid = FormData(RequestValue.RNull, None, isValid = false)
+
+    /// Indicates whether the form passed antiforgery validation.
+    member _.IsValid = defaultArg isValid true
+
+    /// Indicates whether the form failed antiforgery validation.
+    member x.IsInvalid = not x.IsValid
+
+    /// The uploaded files included in the form, if any.
     member _.Files = files
 
+    /// Attempts to retrieve a file from the form by name, returning `None` if
+    /// the file is not found or if there are no files.
     member _.TryGetFile(name : string) =
         match files, name with
         | _, IsNullOrWhiteSpace _

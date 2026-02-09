@@ -430,46 +430,6 @@ let ``Request.mapForm`` () =
     }
 
 [<Fact>]
-let ``Request.mapFormSecure`` () =
-    let ctx = getHttpContextWriteable false
-    let form = Dictionary<string, StringValues>()
-    form.Add("name", StringValues "falco")
-    let f = FormCollection(form)
-
-    ctx.Request.ReadFormAsync().Returns(f) |> ignore
-    ctx.Request.ReadFormAsync(Arg.Any<CancellationToken>()).Returns(f) |> ignore
-
-    let handle name : HttpHandler =
-        name |> should equal "falco"
-        Response.ofEmpty
-
-    task {
-        do! Request.mapFormSecure (fun f -> f.GetString "name" ) handle Response.ofEmpty ctx
-    }
-
-[<Fact>]
-let ``Request.mapFormSecure should reject invalid CSRF token`` () =
-    let ctx = getHttpContextWriteable false
-    ctx.Request.ContentType <- "application/x-www-form-urlencoded"
-
-    let form = Dictionary<string, StringValues>()
-    form.Add("name", StringValues "falco")
-    let f = FormCollection(form)
-
-    ctx.Request.ReadFormAsync().Returns(f) |> ignore
-    ctx.Request.ReadFormAsync(Arg.Any<CancellationToken>()).Returns(f) |> ignore
-
-    // Mock CSRF validation to fail
-    ctx.Request.Cookies <- Map.empty |> cookieCollection
-
-    let handleOk _ = Response.ofEmpty
-    let handleInvalidToken : HttpHandler = fun ctx ->
-        ctx.Response.StatusCode <- 403
-        Response.ofEmpty ctx
-
-    Request.mapFormSecure (fun f -> f.GetString "name") handleOk handleInvalidToken ctx |> ignore
-
-[<Fact>]
 let ``Request.authenticate should call AuthenticateAsync`` () =
     let ctx = getHttpContextWriteable true
 

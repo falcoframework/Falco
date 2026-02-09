@@ -27,7 +27,7 @@ let ``MultipartReader.StreamSectionsAsync()`` () =
 
     task {
         use tokenSource = new CancellationTokenSource()
-        let! form = rd.StreamSectionsAsync(tokenSource.Token, DefaultMaxFileSize) // 10mb max file size
+        let! form = rd.StreamSectionsAsync(tokenSource.Token, DefaultMaxSize) // 10mb max file size
         form.Files.Count |> should equal 0
 
         let formData = FormData(RequestValue.parseForm(form, None), Some form.Files)
@@ -62,7 +62,7 @@ let ``MultipartReader.StreamSectionsAsync() with 3-part body`` () =
 
     task {
         use tokenSource = new CancellationTokenSource()
-        let! form = rd.StreamSectionsAsync(tokenSource.Token, DefaultMaxFileSize) // 10mb max file size
+        let! form = rd.StreamSectionsAsync(tokenSource.Token, DefaultMaxSize) // 10mb max file size
         form.Files.Count |> should equal 2
 
         // can we access the files?
@@ -112,7 +112,7 @@ let ``MultipartReader.StreamSectionsAsync() should handle empty form`` () =
 
     task {
         use tokenSource = new CancellationTokenSource()
-        let! form = rd.StreamSectionsAsync(tokenSource.Token, DefaultMaxFileSize)
+        let! form = rd.StreamSectionsAsync(tokenSource.Token, DefaultMaxSize)
 
         form.Count |> should equal 0
         form.Files.Count |> should equal 0
@@ -140,7 +140,7 @@ let ``MultipartReader.StreamSectionsAsync() should handle multiple form fields``
 
     task {
         use tokenSource = new CancellationTokenSource()
-        let! form = rd.StreamSectionsAsync(tokenSource.Token, DefaultMaxFileSize)
+        let! form = rd.StreamSectionsAsync(tokenSource.Token, DefaultMaxSize)
 
         form.Count |> should equal 3
         form["field1"] |> should equal (StringValues("value1"))
@@ -166,7 +166,7 @@ let ``MultipartReader.StreamSectionsAsync() should handle duplicate field names`
 
     task {
         use tokenSource = new CancellationTokenSource()
-        let! form = rd.StreamSectionsAsync(tokenSource.Token, DefaultMaxFileSize)
+        let! form = rd.StreamSectionsAsync(tokenSource.Token, DefaultMaxSize)
 
         form["tags"].Count |> should equal 2
         form["tags"].[0] |> should equal "tag1"
@@ -196,7 +196,7 @@ let ``MultipartReader.StreamSectionsAsync() should handle mixed files and fields
 
     task {
         use tokenSource = new CancellationTokenSource()
-        let! form = rd.StreamSectionsAsync(tokenSource.Token, DefaultMaxFileSize)
+        let! form = rd.StreamSectionsAsync(tokenSource.Token, DefaultMaxSize)
 
         form.Count |> should equal 2  // username, bio
         form.Files.Count |> should equal 1
@@ -220,7 +220,7 @@ let ``MultipartReader.StreamSectionsAsync() should preserve file content type`` 
 
     task {
         use tokenSource = new CancellationTokenSource()
-        let! form = rd.StreamSectionsAsync(tokenSource.Token, DefaultMaxFileSize)
+        let! form = rd.StreamSectionsAsync(tokenSource.Token, DefaultMaxSize)
 
         form.Files.Count |> should equal 1
         form.Files[0].ContentType |> should equal "application/json"
@@ -241,7 +241,7 @@ let ``MultipartReader.StreamSectionsAsync() should skip sections with missing na
 
     task {
         use tokenSource = new CancellationTokenSource()
-        let! form = rd.StreamSectionsAsync(tokenSource.Token, DefaultMaxFileSize)
+        let! form = rd.StreamSectionsAsync(tokenSource.Token, DefaultMaxSize)
 
         // Should be skipped entirely
         form.Count |> should equal 0
@@ -263,7 +263,7 @@ let ``MultipartReader.StreamSectionsAsync() should skip file sections with missi
 
     task {
         use tokenSource = new CancellationTokenSource()
-        let! form = rd.StreamSectionsAsync(tokenSource.Token, DefaultMaxFileSize)
+        let! form = rd.StreamSectionsAsync(tokenSource.Token, DefaultMaxSize)
 
         // Should be skipped (no filename = not a file)
         form.Files.Count |> should equal 0

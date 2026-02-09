@@ -12,7 +12,7 @@ open Microsoft.Net.Http.Headers
 
 module Multipart =
     [<Literal>]
-    let DefaultMaxFileSize = 32L * 1024L * 1024L // 32mb
+    let DefaultMaxSize = 32L * 1024L * 1024L // 32mb
 
     type private MultipartSectionData =
         | NoMultipartData
@@ -32,17 +32,18 @@ module Multipart =
             | false, _     -> None
             | true, parsed -> Some parsed
 
-        member private x.StreamSectionAsync(ct : CancellationToken, maxFileSize : int64) =
+        /// Stream with size check to avoid unbounded memory growth.
+        /// Streams the current section asynchronously with a specified maximum size.
+        ///
+        /// - `ct`: A `CancellationToken` to observe while waiting for the task to complete.
+        /// - `maxSize`: The maximum size, in total bytes, allowed for the section being streamed.
+        member private x.StreamSectionAsync(ct : CancellationToken, maxSize : int64) =
             task {
                 match MultipartSection.TryGetContentDisposition(x) with
                 | Some cd when cd.IsFileDisposition() && cd.FileName.HasValue && cd.Name.HasValue  ->
 
+                    // cannot be disposed until the FormFile is fully read
                     let str = new MemoryStream()
-                    // do! x.Body.CopyToAsync(str, ct)
-
-                    // let safeFileName = WebUtility.HtmlEncode cd.FileName.Value
-                    // let file = new FormFile(str, int64 0, str.Length, cd.Name.Value, safeFileName)
-                    // Stream with size check to avoid unbounded memory growth
 
                     let mutable bytesRead = 0L
                     let buffer = Array.zeroCreate 65536 // 64KB chunks
@@ -54,8 +55,8 @@ module Multipart =
                         | 0 -> shouldRead <- false
                         | n ->
                             bytesRead <- bytesRead + int64 n
-                            if bytesRead > maxFileSize then
-                                raise (InvalidOperationException $"File exceeds maximum size of {maxFileSize} bytes")
+                            if bytesRead > maxSize then
+                                raise (InvalidOperationException $"File exceeds maximum size of {maxSize} bytes")
                             do! str.WriteAsync(buffer, 0, n, ct)
 
                     let safeFileName = WebUtility.HtmlEncode cd.FileName.Value
@@ -85,8 +86,11 @@ module Multipart =
             }
 
     type MultipartReader with
-
-        member x.StreamSectionsAsync(ct : CancellationToken, ?maxFileSize : int64) =
+        /// Streams the multipart sections and accumulates form values and files into an `IFormCollection`.
+        ///
+        /// - `ct`: A `CancellationToken` to observe while waiting for the task to complete.
+        /// - `maxSize`: The maximum size, in total bytes, allowed for each individual section being streamed.
+        member x.StreamSectionsAsync(ct : CancellationToken, ?maxSize : int64) =
             task {
                 let formData = new KeyValueAccumulator()
                 let formFiles = new FormFileCollection()
@@ -101,13 +105,13 @@ module Multipart =
                         shouldContinue <- false
 
                     | false ->
-                        // default to 32mb max file size if not provided
-                        let! sectionData = section.StreamSectionAsync(ct, defaultArg maxFileSize DefaultMaxFileSize)
+                        // default to max file size if not provided
+                        let! sectionData = section.StreamSectionAsync(ct, defaultArg maxSize DefaultMaxSize)
 
                         match sectionData with
-                        | FormFileData file          -> formFiles.Add(file)
+                        | FormFileData file -> formFiles.Add(file)
                         | FormValueData (key, value) -> formData.Append(key, value)
-                        | NoMultipartData            -> shouldContinue <- false
+                        | NoMultipartData -> shouldContinue <- false
 
                 let formCollection = FormCollection(formData.GetResults(), formFiles) :> IFormCollection
                 return formCollection
@@ -137,7 +141,7 @@ module Multipart =
                     let multipartReader = new MultipartReader(boundary, x.Body)
 
                     // default to 32mb max file size if not provided
-                    let! formCollection = multipartReader.StreamSectionsAsync(ct, defaultArg maxFileSize DefaultMaxFileSize)
+                    let! formCollection = multipartReader.StreamSectionsAsync(ct, defaultArg maxFileSize DefaultMaxSize)
                     return formCollection
 
                 | _, None
