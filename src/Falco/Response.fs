@@ -208,9 +208,7 @@ let ofJson
 /// 301 redirect to provided URL.
 let signIn
     (authScheme : string)
-    (claimsPrincipal : ClaimsPrincipal) : HttpHandler =
-    withStatusCode 301
-    >> fun ctx ->
+    (claimsPrincipal : ClaimsPrincipal) : HttpHandler = fun ctx ->
     task {
         do! ctx.SignInAsync(authScheme, claimsPrincipal)
     }
@@ -221,7 +219,10 @@ let signInOptions
     (authScheme : string)
     (claimsPrincipal : ClaimsPrincipal)
     (options : AuthenticationProperties) : HttpHandler =
-    withStatusCode 301
+    withHeaders [
+        if not (String.IsNullOrEmpty options.RedirectUri) then
+            HeaderNames.Location, options.RedirectUri ]
+    >> (if not (String.IsNullOrEmpty options.RedirectUri) then withStatusCode 301 else id)
     >> fun ctx ->
     task {
         do! ctx.SignInAsync(authScheme, claimsPrincipal, options)
@@ -234,18 +235,14 @@ let signInAndRedirect
     (claimsPrincipal : ClaimsPrincipal)
     (url : string) : HttpHandler =
     let options = AuthenticationProperties(RedirectUri = url)
-    withHeaders [ HeaderNames.Location, url ]
-    >> withStatusCode 301
-    >> signInOptions authScheme claimsPrincipal options
+    signInOptions authScheme claimsPrincipal options
 
 /// Terminates authenticated context for provided scheme then responds with a 301
 /// redirect to provided URL (via AuthenticationProperties.RedirectUri).
 let signOut
-    (authScheme : string) : HttpHandler =
-    withStatusCode 301
-    >> fun ctx ->
+    (authScheme : string) : HttpHandler = fun ctx ->
     task {
-        do! ctx.SignOutAsync(authScheme)
+        do! ctx.SignOutAsync authScheme
     }
 
 /// Terminates authenticated context for provided scheme then responds with a 301
@@ -253,7 +250,10 @@ let signOut
 let signOutOptions
     (authScheme : string)
     (options : AuthenticationProperties) : HttpHandler =
-    withStatusCode 301
+    withHeaders [
+        if not (String.IsNullOrEmpty options.RedirectUri) then
+            HeaderNames.Location, options.RedirectUri ]
+    >> (if not (String.IsNullOrEmpty options.RedirectUri) then withStatusCode 301 else id)
     >> fun ctx ->
     task {
         do! ctx.SignOutAsync(authScheme, options)
@@ -265,9 +265,7 @@ let signOutAndRedirect
     (authScheme : string)
     (url : string) : HttpHandler =
     let options = AuthenticationProperties(RedirectUri = url)
-    withHeaders [ HeaderNames.Location, url ]
-    >> withStatusCode 301
-    >> signOutOptions authScheme options
+    signOutOptions authScheme options
 
 /// Challenges the specified authentication scheme.
 /// An authentication challenge can be issued when an unauthenticated user
@@ -276,11 +274,12 @@ let signOutAndRedirect
 let challengeOptions
     (authScheme : string)
     (options : AuthenticationProperties) : HttpHandler =
-    withHeaders [
+    withStatusCode 401
+    >> withHeaders [
         HeaderNames.WWWAuthenticate, authScheme
-        if not (String.IsNullOrEmpty(options.RedirectUri)) then
-            HeaderNames.Location, options.RedirectUri
-    ] >> fun ctx ->
+        if not (String.IsNullOrEmpty options.RedirectUri) then
+            HeaderNames.Location, options.RedirectUri ]
+    >> fun ctx ->
     task {
         do! ctx.ChallengeAsync(authScheme, options)
     }
