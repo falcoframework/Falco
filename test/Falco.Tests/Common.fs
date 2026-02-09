@@ -39,7 +39,6 @@ let getResponseBody (ctx : HttpContext) =
         return! reader.ReadToEndAsync()
     }
 
-
 [<Literal>]
 let AuthScheme = "Testing"
 
@@ -89,13 +88,6 @@ let getHttpContextWriteable (authenticated : bool) =
         .Returns(fun args ->
             let ctx = args.Arg<HttpContext>()
             let scheme = args.Arg<string>()
-            // let props = args.Arg<AuthenticationProperties>()
-
-            ctx.Response.StatusCode <- 401
-            ctx.Response.Headers.SetCommaSeparatedValues(HeaderNames.WWWAuthenticate, scheme)
-            // if not (String.IsNullOrEmpty(props.RedirectUri)) then
-            //     ctx.Response.Headers.Add(HeaderNames.Location, props.RedirectUri)
-
             Task.CompletedTask
         ) |> ignore
 
@@ -122,7 +114,6 @@ let getHttpContextWriteable (authenticated : bool) =
 
     ctx.Request.Returns req |> ignore
     ctx.Response.Returns resp |> ignore
-    // ctx.RequestServices.Returns provider |> ignore
     ctx.RequestServices
         .GetService(Arg.Any<Type>())
         .Returns(fun args ->
