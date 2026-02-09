@@ -44,6 +44,7 @@ The best way to get started is by visiting the [documentation](https://falcofram
 - [Falco.Htmx](https://github.com/dpraimeyuu/Falco.Htmx) - a full featured integration with [htmx JS package](https://htmx.org/).
 - [Falco.OpenApi](https://github.com/FalcoFramework/Falco.OpenApi) - a library for generating OpenAPI documentation from Falco applications.
 - [Falco.Template](https://github.com/FalcoFramework/Falco.Template) - a .NET SDK [project template](https://learn.microsoft.com/en-us/dotnet/core/tools/custom-templates) to help get started with Falco quickly.
+- [Falco.UnionRoutes](https://github.com/michaelglass/Falco.UnionRoutes/) - a library for expressing routes as a descriminated union, inspired by Haskell's [Servant](https://docs.servant.dev/).
 - [CloudSeed](https://cloudseed.xyz/) - a simple, scalable project boilerplate for F# / .NET.
 
 ### Community Projects
