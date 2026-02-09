@@ -14,9 +14,6 @@ open Falco.Multipart
 open Falco.Security
 open Falco.StringUtils
 
-let private defaultTaskTimeout =
-    TimeSpan.FromSeconds 30.0
-
 let internal defaultJsonOptions =
     let options = JsonSerializerOptions()
     options.AllowTrailingCommas <- true
@@ -45,7 +42,7 @@ let getVerb (ctx : HttpContext) : HttpVerb =
 /// - `maxSize`: The maximum size, in total bytes, allowed for the body being read.
 let getBodyStringOptions (maxSize : int64) (ctx : HttpContext) : Task<string> =
     task {
-        use tokenSource = new CancellationTokenSource(defaultTaskTimeout)
+        use tokenSource = new CancellationTokenSource()
         let str = new MemoryStream()
 
         let mutable bytesRead = 0L
@@ -114,7 +111,7 @@ let getFormOptions (maxSize : int64) (ctx : HttpContext) : Task<FormData> =
             let! isAuth = Xsrf.validateToken ctx
 
             if isAuth then
-                use tokenSource = new CancellationTokenSource(defaultTaskTimeout)
+                use tokenSource = new CancellationTokenSource()
 
                 let! form =
                     if ctx.Request.IsMultipart() then
@@ -164,7 +161,7 @@ let getJsonOptions<'T>
                 return JsonSerializer.Deserialize<'T>("{}", options)
 
             else
-                use tokenSource = new CancellationTokenSource(defaultTaskTimeout)
+                use tokenSource = new CancellationTokenSource()
                 let! json = JsonSerializer.DeserializeAsync<'T>(ctx.Request.Body, options, tokenSource.Token).AsTask()
                 return json
 
