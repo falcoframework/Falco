@@ -36,6 +36,12 @@ module private RequestValueExtensions =
         | RNull | RObject _ -> []
         | v -> bind v |> Option.toList
 
+    let tryGetOrElse name fn inputValue defaultValue requestValue =
+        tryGet name fn requestValue |> Option.orElse inputValue |> Option.defaultValue defaultValue
+
+    let tryGetList name fn requestValue =
+        requestValue |> tryGet name (fn >> Some) |> Option.defaultValue []
+
     let asObject requestValue =
         match requestValue with
         | RObject properties -> Some properties
@@ -236,47 +242,47 @@ type RequestData(requestValue : RequestValue) =
     member _.AsGuidList() = asGuidList requestValue
     member _.AsTimeSpanList() = asTimeSpanList requestValue
 
-    member x.TryGetString (name : string) = tryGet name asString requestValue
-    member x.TryGetStringNonEmpty (name : string) = tryGet name asStringNonEmpty requestValue
-    member x.TryGetInt16 (name : string) = tryGet name asInt16 requestValue
-    member x.TryGetInt32 (name : string) = tryGet name asInt32 requestValue
-    member x.TryGetInt (name : string) = tryGet name asInt32 requestValue
-    member x.TryGetInt64 (name : string) = tryGet name asInt64 requestValue
-    member x.TryGetBoolean (name : string) = tryGet name asBoolean requestValue
-    member x.TryGetFloat (name : string) = tryGet name asFloat requestValue
-    member x.TryGetDecimal (name : string) = tryGet name asDecimal requestValue
-    member x.TryGetDateTime (name : string) = tryGet name asDateTime requestValue
-    member x.TryGetDateTimeOffset (name : string) = tryGet name asDateTimeOffset requestValue
-    member x.TryGetGuid (name : string) = tryGet name asGuid requestValue
-    member x.TryGetTimeSpan (name : string) = tryGet name asTimeSpan requestValue
+    member _.TryGetString (name : string) = tryGet name asString requestValue
+    member _.TryGetStringNonEmpty (name : string) = tryGet name asStringNonEmpty requestValue
+    member _.TryGetInt16 (name : string) = tryGet name asInt16 requestValue
+    member _.TryGetInt32 (name : string) = tryGet name asInt32 requestValue
+    member _.TryGetInt (name : string) = tryGet name asInt32 requestValue
+    member _.TryGetInt64 (name : string) = tryGet name asInt64 requestValue
+    member _.TryGetBoolean (name : string) = tryGet name asBoolean requestValue
+    member _.TryGetFloat (name : string) = tryGet name asFloat requestValue
+    member _.TryGetDecimal (name : string) = tryGet name asDecimal requestValue
+    member _.TryGetDateTime (name : string) = tryGet name asDateTime requestValue
+    member _.TryGetDateTimeOffset (name : string) = tryGet name asDateTimeOffset requestValue
+    member _.TryGetGuid (name : string) = tryGet name asGuid requestValue
+    member _.TryGetTimeSpan (name : string) = tryGet name asTimeSpan requestValue
 
-    member x.GetString (name : string, ?defaultValue : String) = requestValue |> tryGet name asString |> orDefault defaultValue ""
-    member x.GetStringNonEmpty (name : string, ?defaultValue : String) = requestValue |> tryGet name asStringNonEmpty |> orDefault defaultValue ""
-    member x.GetInt16 (name : string, ?defaultValue : Int16) = requestValue |> tryGet name asInt16 |> orDefault defaultValue 0s
-    member x.GetInt32 (name : string, ?defaultValue : Int32) = requestValue |> tryGet name asInt32 |> orDefault defaultValue 0
-    member x.GetInt (name : string, ?defaultValue : Int32) = requestValue |> tryGet name asInt32 |> orDefault defaultValue 0
-    member x.GetInt64 (name : string, ?defaultValue : Int64) = requestValue |> tryGet name asInt64 |> orDefault defaultValue 0L
-    member x.GetBoolean (name : string, ?defaultValue : Boolean) = requestValue |> tryGet name asBoolean |> orDefault defaultValue false
-    member x.GetFloat (name : string, ?defaultValue : float) = requestValue |> tryGet name asFloat |> orDefault defaultValue 0
-    member x.GetDecimal (name : string, ?defaultValue : Decimal) = requestValue |> tryGet name asDecimal |> orDefault defaultValue 0M
-    member x.GetDateTime (name : string, ?defaultValue : DateTime) = requestValue |> tryGet name asDateTime |> orDefault defaultValue DateTime.MinValue
-    member x.GetDateTimeOffset (name : string, ?defaultValue : DateTimeOffset) = requestValue |> tryGet name asDateTimeOffset |> orDefault defaultValue DateTimeOffset.MinValue
-    member x.GetGuid (name : string, ?defaultValue : Guid) = requestValue |> tryGet name asGuid |> orDefault defaultValue Guid.Empty
-    member x.GetTimeSpan (name : string, ?defaultValue : TimeSpan) = requestValue |> tryGet name asTimeSpan |> orDefault defaultValue TimeSpan.MinValue
+    member _.GetString (name : string, ?defaultValue : String) = tryGetOrElse name asString defaultValue "" requestValue
+    member _.GetStringNonEmpty (name : string, ?defaultValue : String) = tryGetOrElse name asStringNonEmpty defaultValue "" requestValue
+    member _.GetInt16 (name : string, ?defaultValue : Int16) = tryGetOrElse name asInt16 defaultValue 0s requestValue
+    member _.GetInt32 (name : string, ?defaultValue : Int32) = tryGetOrElse name asInt32 defaultValue 0 requestValue
+    member _.GetInt (name : string, ?defaultValue : Int32) = tryGetOrElse name asInt32 defaultValue 0 requestValue
+    member _.GetInt64 (name : string, ?defaultValue : Int64) = tryGetOrElse name asInt64 defaultValue 0L requestValue
+    member _.GetBoolean (name : string, ?defaultValue : Boolean) = tryGetOrElse name asBoolean defaultValue false requestValue
+    member _.GetFloat (name : string, ?defaultValue : float) = tryGetOrElse name asFloat defaultValue 0 requestValue
+    member _.GetDecimal (name : string, ?defaultValue : Decimal) = tryGetOrElse name asDecimal defaultValue 0M requestValue
+    member _.GetDateTime (name : string, ?defaultValue : DateTime) = tryGetOrElse name asDateTime defaultValue DateTime.MinValue requestValue
+    member _.GetDateTimeOffset (name : string, ?defaultValue : DateTimeOffset) = tryGetOrElse name asDateTimeOffset defaultValue DateTimeOffset.MinValue requestValue
+    member _.GetGuid (name : string, ?defaultValue : Guid) = tryGetOrElse name asGuid defaultValue Guid.Empty requestValue
+    member _.GetTimeSpan (name : string, ?defaultValue : TimeSpan) = tryGetOrElse name asTimeSpan defaultValue TimeSpan.MinValue requestValue
 
-    member _.GetStringList (name : string) = requestValue |> tryGet name (asStringList >> Some) |> orDefault None []
-    member _.GetStringNonEmptyList (name : string) = requestValue |> tryGet name (asStringNonEmptyList >> Some) |> orDefault None []
-    member _.GetInt16List (name : string) = requestValue |> tryGet name (asInt16List >> Some) |> orDefault None []
-    member _.GetInt32List (name : string) = requestValue |> tryGet name (asInt32List >> Some) |> orDefault None []
-    member _.GetIntList (name : string) = requestValue |> tryGet name (asInt32List >> Some) |> orDefault None []
-    member _.GetInt64List (name : string) = requestValue |> tryGet name (asInt64List >> Some) |> orDefault None []
-    member _.GetBooleanList (name : string) = requestValue |> tryGet name (asBooleanList >> Some) |> orDefault None []
-    member _.GetFloatList (name : string) = requestValue |> tryGet name (asFloatList >> Some) |> orDefault None []
-    member _.GetDecimalList (name : string) = requestValue |> tryGet name (asDecimalList >> Some) |> orDefault None []
-    member _.GetDateTimeList (name : string) = requestValue |> tryGet name (asDateTimeList >> Some) |> orDefault None []
-    member _.GetDateTimeOffsetList (name : string) = requestValue |> tryGet name (asDateTimeOffsetList >> Some) |> orDefault None []
-    member _.GetGuidList (name : string) = requestValue |> tryGet name (asGuidList >> Some) |> orDefault None []
-    member _.GetTimeSpanList (name : string) = requestValue |> tryGet name (asTimeSpanList >> Some) |> orDefault None []
+    member _.GetStringList (name : string) = tryGetList name asStringList requestValue
+    member _.GetStringNonEmptyList (name : string) = tryGetList name asStringNonEmptyList requestValue
+    member _.GetInt16List (name : string) = tryGetList name asInt16List requestValue
+    member _.GetInt32List (name : string) = tryGetList name asInt32List requestValue
+    member _.GetIntList (name : string) = tryGetList name asInt32List requestValue
+    member _.GetInt64List (name : string) = tryGetList name asInt64List requestValue
+    member _.GetBooleanList (name : string) = tryGetList name asBooleanList requestValue
+    member _.GetFloatList (name : string) = tryGetList name asFloatList requestValue
+    member _.GetDecimalList (name : string) = tryGetList name asDecimalList requestValue
+    member _.GetDateTimeList (name : string) = tryGetList name asDateTimeList requestValue
+    member _.GetDateTimeOffsetList (name : string) = tryGetList name asDateTimeOffsetList requestValue
+    member _.GetGuidList (name : string) = tryGetList name asGuidList requestValue
+    member _.GetTimeSpanList (name : string) = tryGetList name asTimeSpanList requestValue
 
 [<AutoOpen>]
 module RequestDataOperators =
