@@ -190,9 +190,15 @@ module internal RequestValueParser =
         |> requestAccToValues
 
 module RequestValue =
+    /// Parses the provided request data into a `RequestValue` structure.
+    ///
+    /// - `requestData`: A dictionary where the key is a string representing the request data key (e.g., form field name, query parameter name) and the value is a sequence of strings representing the values associated with that key. This allows for handling multiple values for the same key, such as in the case of checkboxes or multi-select form fields.
     let parse (requestData : IDictionary<string, string seq>) : RequestValue =
         RequestValueParser.parse requestData
 
+    /// Parses a URL-encoded key-value string (e.g., "key1=value1&key2=value2") into a `RequestValue` structure.
+    ///
+    /// - `keyValueString`: A URL-encoded string containing key-value pairs, where keys and values are separated by '=' and pairs are separated by '&'. Keys without values (e.g., "key1&key2=value2") are treated as having an empty string value. The keys and values are URL-decoded before parsing.
     let parseString (keyValueString : string) : RequestValue =
         let requestDataPairs = Dictionary<string, IList<string>>()
 
@@ -218,12 +224,18 @@ module RequestValue =
         |> dict
         |> parse
 
+    /// Parses the cookies from the request into a `RequestValue` structure.
+    ///
+    /// - `cookies`: An `IRequestCookieCollection` containing the cookies from the HTTP request. Each cookie's key and value are URL-decoded before parsing. Multiple cookies with the same key are not expected, as cookie keys are unique within a request, but if they do occur, they will be treated as multiple values for the same key.
     let parseCookies (cookies : IRequestCookieCollection) : RequestValue =
         cookies
         |> Seq.map (fun kvp -> kvp.Key, seq { kvp.Value })
         |> dict
         |> parse
 
+    /// Parses the headers from the request into a `RequestValue` structure.
+    ///
+    /// - `headers`: An `IHeaderDictionary` containing the headers from the HTTP request. Each header's key and value(s) are URL-decoded before parsing. Headers can have multiple values for the same key, and all values will be included in the resulting `RequestValue`.
     let parseHeaders (headers : IHeaderDictionary) : RequestValue =
         headers
         |> Seq.map (fun kvp -> kvp.Key, kvp.Value :> string seq)
@@ -239,6 +251,10 @@ module RequestValue =
         query
         |> Seq.map (fun kvp -> kvp.Key, kvp.Value :> string seq)
 
+    /// Parses the route values and query string from the request into a `RequestValue` structure.
+    ///
+    /// - `route`: A `RouteValueDictionary` containing the route values from the HTTP request. Each route value's key and value are URL-decoded before parsing. Route values are typically defined in the route template and can be used to capture dynamic segments of the URL.
+    /// - `query`: An `IQueryCollection` containing the query string parameters from the HTTP request. Each query parameter's key and value(s) are URL-decoded before parsing. Query parameters can have multiple values for the same key, and all values will be included in the resulting `RequestValue`.
     let parseRoute (route : RouteValueDictionary, query : IQueryCollection) : RequestValue =
         Seq.concat [
             route
@@ -249,12 +265,19 @@ module RequestValue =
         |> dict
         |> parse
 
+    /// Parses the query string from the request into a `RequestValue` structure.
+    ///
+    /// - `query`: An `IQueryCollection` containing the query string parameters from the HTTP request. Each query parameter's key and value(s) are URL-decoded before parsing. Query parameters can have multiple values for the same key, and all values will be included in the resulting `RequestValue`.
     let parseQuery (query : IQueryCollection) : RequestValue =
         query
         |> queryKeyValues
         |> dict
         |> parse
 
+    /// Parses the form data from the request into a `RequestValue` structure.
+    ///
+    /// - `form`: An `IFormCollection` containing the form data from the HTTP request. Each form field's key and value(s) are URL-decoded before parsing. Form fields can have multiple values for the same key (e.g., in the case of checkboxes or multi-select fields), and all values will be included in the resulting `RequestValue`. The `route` parameter is optional and can be used to include route values in the parsing process, which is useful when you want to combine route values with form data.
+    /// - `route`: An optional `RouteValueDictionary` containing the route values from the HTTP request. Each route value's key and value are URL-decoded before parsing. Route values are typically defined in the route template and can be used to capture dynamic segments of the URL. If provided, the route values will be combined with the form data during parsing, allowing you to access both sets of values in the resulting `RequestValue`.
     let parseForm (form : IFormCollection, route : RouteValueDictionary option) : RequestValue =
         let routeKeyValues = route |> Option.map routeKeyValues |> Option.defaultValue Seq.empty
 
