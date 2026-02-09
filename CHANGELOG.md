@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [6.0.0] - _unreleased_
+
+### Added
+
+- `Request.getBodyStringOptions` to allow configuration of the maximum request body size, with a default of `Multipart.DefaultMaxSize` (32MB).
+- `Request.getFormOptions` to allow configuration of the maximum form size, with a default of `Multipart.DefaultMaxSize` (32MB).
+- Guards to `RequestValue.parse` to prevent oversized numerics or leading-zero numeric strings (non-decimal) from being parsed as floats.
+- Max size constraint to multipart form streaming, with a default of `Multipart.DefaultMaxSize` (32MB).
+- `FormData.IsValid` property to indicate whether CSRF validation succeeded for form requests.
+
+### Changed
+
+- `Request.getForm` now automatically performs CSRF validation if antiforgery services are registered and the request method is POST, PUT, PATCH, or DELETE. Returns `FormData` with `IsValid = false` when validation fails.
+- Increased multipart form streaming buffer size from 1024 to 8192 bytes to improve performance of large file uploads.
+- `Request.ifAuthenticatedInRole` accepts roles as `seq` instead of `list` for more flexible input options.
+- `Request.getJsonOptions` explicitly checks for application/json content type and empty body, returning default form of `T`. Returns 415 Unsupported Media Type response when content type is missing.
+- `Response.signInOptions` and `Response.signOutOptions` now conditionally set status code 301 and Location header only when `AuthenticationProperties.RedirectUri` is present.
+- `Response.challengeOptions` and `Response.challengeAndRedirect` now set status code 401 and WWW-Authenticate header to properly indicate authentication challenge.
+
+### Fixed
+
+- Unnecessary URL decode in `RequestValue.parseString`.
+- Default `JsonSerializerOptions` used for JSON deserialization, optimized by making read-only and static to prevent unnecessary allocations.
+- `Response.ofAttachment` now properly escapes provided filename to ensure correct handling of special characters and spaces across different browsers.
+- Added missing Location header to `Response.signInOptions` and `Response.signOutOptions` when redirect URI is specified.
+
+### Removed
+
+- `Request.getFormSecure` and `Request.mapFormSecure`, which were explicit enablements of the now default CSRF validation for form requests. `Request.getForm` and `Request.mapForm` now include automatic CSRF validation when antiforgery services are registered and request method is POST, PUT, PATCH, or DELETE.
+
 ## [5.2.0] - 2025-12-21
 
 ### Added
@@ -58,7 +88,6 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - `Xss` module renamed to `Xsrf`. Functions: `Xsrf.antiforgeryInput`, `Xsrf.getToken` & `Xsrf.validateToken`.
-
 
 ### Fixed
 
