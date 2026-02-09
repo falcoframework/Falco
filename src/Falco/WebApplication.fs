@@ -10,6 +10,7 @@ module Extensions =
     open Microsoft.Extensions.Logging
 
     type IEndpointRouteBuilder with
+        /// Registers a sequence of `Falco.HttpEndpoint` with the endpoint route builder.
         member this.UseFalcoEndpoints(endpoints : HttpEndpoint seq) : IEndpointRouteBuilder =
             let falcoDataSource =
                 let registeredDataSource = this.ServiceProvider.GetService<FalcoEndpointDataSource>()
@@ -54,12 +55,17 @@ module Extensions =
 
         /// Activates Falco integration with IEndpointRouteBuilder.
         ///
-        /// This is the default way to enable the package.
+        /// This is the default way to enable the library.
         member this.UseFalco(endpoints : HttpEndpoint seq) : IApplicationBuilder =
             this.UseEndpoints(fun endpointBuilder ->
                 endpointBuilder.UseFalcoEndpoints(endpoints) |> ignore)
 
         /// Registers a `Falco.HttpHandler` as terminal middleware (i.e., not found).
+        /// This should be registered at the end of the middleware pipeline to catch any
+        /// requests that were not handled by any other middleware. The provided
+        /// handler will be executed for any requests that reach this point in
+        /// the pipeline, allowing you to return a custom 404 response or perform
+        /// other actions as needed.
         member this.UseFalcoNotFound(notFoundHandler : HttpHandler) : unit =
             this.Run(handler = HttpHandler.toRequestDelegate notFoundHandler)
 

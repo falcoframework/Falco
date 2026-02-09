@@ -9,6 +9,13 @@ module Xsrf =
     open Microsoft.Extensions.DependencyInjection
 
     /// Outputs an antiforgery <input type="hidden" />.
+    ///
+    /// This should be used within a form to include the antiforgery token as part
+    /// of the form submission. The token is generated and stored in the user's
+    /// cookies by calling `getToken` and then passed to this function to create
+    /// the hidden input field.
+    ///
+    /// - `token` - The antiforgery token set containing the form field name and request token value.
     let antiforgeryInput
         (token : AntiforgeryTokenSet) =
         Elem.input [
