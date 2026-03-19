@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/Falco/Falco.fsproj" />
-    <PackageReference Include="Scriban" Version="5.*" />
+    <PackageReference Include="Scriban" Version="6.*" />
   </ItemGroup>
 
   <ItemGroup>
