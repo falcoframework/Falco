@@ -45,3 +45,10 @@ module Xsrf =
                 | :? AntiforgeryValidationException ->
                     return false  // Token present but invalid
             }
+
+    let internal isEnabled (ctx : HttpContext) : bool =
+        try
+            ctx.RequestServices.GetRequiredService<IAntiforgery>() |> ignore
+            true  // Antiforgery service is registered, so antiforgery is enabled
+        with :? InvalidOperationException ->
+            false  // Antiforgery service not registered, so antiforgery is not enabled

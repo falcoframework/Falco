@@ -52,7 +52,7 @@ let endpoints =
             (fun person -> Request.mapQuery (mapRequestData person) Response.ofJson)
 
         mapPost "/hello/{name?}" mapRouteData
-            (fun person -> Request.mapForm (mapRequestData person) Response.ofJson)
+            (fun person -> Request.mapForm (mapRequestData person) Response.ofJson Response.ofEmpty)
 
         mapGet "/plug/{name?}"
             (fun r -> r?name.AsStringNonEmpty("world"))

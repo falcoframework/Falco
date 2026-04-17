@@ -120,11 +120,12 @@ module Tests =
         Assert.Equal("""{"Message":"Hello world, you are 7 years old!"}""", content)
 
     [<Fact>]
-    let ``POST /api/message with non-json content type should fail`` () =
+    let ``POST /api/message with non-json content type should return empty JSON literal`` () =
         use client = factory.CreateClient()
         use body = new StringContent("Message=Hello", Encoding.UTF8, "text/plain")
         let response = client.PostAsync("/api/message", body).Result
-        Assert.False(response.IsSuccessStatusCode)
+        let content = response.Content.ReadAsStringAsync().Result
+        Assert.Equal("""{}""", content)
 
     [<Fact>]
     let ``POST /api/message echoes input`` () =

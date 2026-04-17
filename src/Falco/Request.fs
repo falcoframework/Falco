@@ -93,6 +93,21 @@ let getQuery (ctx : HttpContext) : RequestData =
     RequestValue.parseQuery ctx.Request.Query
     |> RequestData
 
+let private consumeForm (maxSize : int64) (ctx : HttpContext) =
+    use tokenSource = new CancellationTokenSource()
+
+    task {
+        let! form =
+            if ctx.Request.IsMultipart() then
+                ctx.Request.StreamFormAsync (tokenSource.Token, maxSize)
+            else
+                ctx.Request.ReadFormAsync tokenSource.Token
+
+        let files = if isNull form.Files then None else Some form.Files
+        let requestValue = RequestValue.parseForm (form, Some ctx.Request.RouteValues)
+        return FormData(requestValue, files)
+    }
+
 /// Retrieves the form collection and route values from the request.
 ///
 /// Performs CSRF validation for POST, PUT, PATCH, DELETE requests, if antiforgery
@@ -108,25 +123,19 @@ let getFormOptions (maxSize : int64) (ctx : HttpContext) : Task<FormData option>
         if ctx.Request.ContentLength.HasValue && ctx.Request.ContentLength.Value > maxSize then
             return None
         else
-            let! isAuth = Xsrf.validateToken ctx
+            match Xsrf.isEnabled ctx with
+            | true ->
+                let! isValid = Xsrf.validateToken ctx
+                if isValid then
+                    let! form = consumeForm maxSize ctx
+                    return Some form
+                else
+                    return None
 
-            if isAuth then
-                use tokenSource = new CancellationTokenSource()
+            | false ->
+                let! form = consumeForm maxSize ctx
+                return Some form
 
-                let! form =
-                    if ctx.Request.IsMultipart() then
-                        ctx.Request.StreamFormAsync (tokenSource.Token, maxSize)
-                    else
-                        ctx.Request.ReadFormAsync tokenSource.Token
-
-                let files = if isNull form.Files then None else Some form.Files
-
-                let requestValue = RequestValue.parseForm (form, Some ctx.Request.RouteValues)
-
-                return Some(FormData(requestValue, files))
-
-            else
-                return None
     }
 
 /// Retrieves the form collection and route values from the request.
