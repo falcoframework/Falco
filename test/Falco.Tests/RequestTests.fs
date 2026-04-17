@@ -196,8 +196,11 @@ let ``Request.getForm should handle urlencoded form data`` () =
 
     task {
         let! formData = Request.getForm ctx
-        formData.GetString "password" |> should equal "secret"
-        formData.GetString "username" |> should equal "john"
+        match formData with
+        | None -> failwith "Expected form data, got None"
+        | Some formData ->
+            formData.GetString "password" |> should equal "secret"
+            formData.GetString "username" |> should equal "john"
     }
 
 [<Fact>]
@@ -230,20 +233,23 @@ let ``Request.getForm should detect multipart form data and stream`` () =
 
     task {
         let! formData = Request.getForm ctx
-        formData.GetString "name" |> should equal "falco"
-        formData.Files |> Option.map Seq.length |> Option.defaultValue 0 |> should equal 2
+        match formData with
+        | None -> failwith "Expected form data, got None"
+        | Some formData ->
+            formData.GetString "name" |> should equal "falco"
+            formData.Files |> Option.map Seq.length |> Option.defaultValue 0 |> should equal 2
 
-        // read file 1
-        use file1Stream = formData.Files.Value.[0].OpenReadStream()
-        use reader1 = new StreamReader(file1Stream)
-        let! file1Content = reader1.ReadToEndAsync()
-        file1Content |> should equal "Content of a.txt.\r\n"
+            // read file 1
+            use file1Stream = formData.Files.Value.[0].OpenReadStream()
+            use reader1 = new StreamReader(file1Stream)
+            let! file1Content = reader1.ReadToEndAsync()
+            file1Content |> should equal "Content of a.txt.\r\n"
 
-        // read file 2
-        use file2Stream = formData.Files.Value.[1].OpenReadStream()
-        use reader2 = new StreamReader(file2Stream)
-        let! file2Content = reader2.ReadToEndAsync()
-        file2Content |> should equal "<!DOCTYPE html><title>Content of a.html.</title>\r\n"
+            // read file 2
+            use file2Stream = formData.Files.Value.[1].OpenReadStream()
+            use reader2 = new StreamReader(file2Stream)
+            let! file2Content = reader2.ReadToEndAsync()
+            file2Content |> should equal "<!DOCTYPE html><title>Content of a.html.</title>\r\n"
     }
 
 [<Fact>]
@@ -426,7 +432,7 @@ let ``Request.mapForm`` () =
         Response.ofEmpty
 
     task {
-        do! Request.mapForm (fun f -> f?name.AsString()) handle ctx
+        do! Request.mapForm (fun f -> f?name.AsString()) handle Response.ofEmpty ctx
     }
 
 [<Fact>]

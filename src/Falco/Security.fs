@@ -42,8 +42,6 @@ module Xsrf =
                     do! antiFrg.ValidateRequestAsync ctx
                     return true
                 with
-                | :? InvalidOperationException ->
-                    return true  // Antiforgery not registered, consider valid
                 | :? AntiforgeryValidationException ->
                     return false  // Token present but invalid
             }

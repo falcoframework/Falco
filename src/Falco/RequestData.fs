@@ -290,18 +290,11 @@ module RequestDataOperators =
         requestData.Get name
 
 [<Sealed>]
-type FormData(requestValue : RequestValue, files : IFormFileCollection option, ?isValid : bool) =
+type FormData(requestValue : RequestValue, files : IFormFileCollection option) =
     inherit RequestData(requestValue)
 
-    static member Empty = FormData(RequestValue.RNull, None, isValid = true)
-
-    static member Invalid = FormData(RequestValue.RNull, None, isValid = false)
-
-    /// Indicates whether the form passed antiforgery validation.
-    member _.IsValid = defaultArg isValid true
-
-    /// Indicates whether the form failed antiforgery validation.
-    member x.IsInvalid = not x.IsValid
+    /// Represents an empty form, with no fields or files.
+    static member Empty = FormData(RequestValue.RNull, None)
 
     /// The uploaded files included in the form, if any.
     member _.Files = files

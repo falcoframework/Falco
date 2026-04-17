@@ -103,10 +103,10 @@ let getQuery (ctx : HttpContext) : RequestData =
 /// Note: Consumes the request body, so should not be called after body has already been read.
 ///
 /// - `maxSize`: The maximum size, in total bytes, allowed for the body being read.
-let getFormOptions (maxSize : int64) (ctx : HttpContext) : Task<FormData> =
+let getFormOptions (maxSize : int64) (ctx : HttpContext) : Task<FormData option> =
     task {
         if ctx.Request.ContentLength.HasValue && ctx.Request.ContentLength.Value > maxSize then
-            return FormData.Invalid
+            return None
         else
             let! isAuth = Xsrf.validateToken ctx
 
@@ -123,10 +123,10 @@ let getFormOptions (maxSize : int64) (ctx : HttpContext) : Task<FormData> =
 
                 let requestValue = RequestValue.parseForm (form, Some ctx.Request.RouteValues)
 
-                return FormData(requestValue, files)
+                return Some(FormData(requestValue, files))
 
             else
-                return FormData.Invalid
+                return None
     }
 
 /// Retrieves the form collection and route values from the request.
@@ -141,7 +141,7 @@ let getFormOptions (maxSize : int64) (ctx : HttpContext) : Task<FormData> =
 /// `getFormOptions` directly.
 ///
 /// Note: Consumes the request body, so should not be called after body has already been read.
-let getForm (ctx : HttpContext) : Task<FormData> =
+let getForm (ctx : HttpContext) : Task<FormData option> =
     getFormOptions Multipart.DefaultMaxSize ctx
 
 /// Attempts to bind request body using System.Text.Json and provided
@@ -154,7 +154,6 @@ let getJsonOptions<'T>
     (ctx : HttpContext) : Task<'T> = task {
         try
             if not (ctx.Request.HasJsonContentType()) then
-                ctx.Response.StatusCode <- StatusCodes.Status415UnsupportedMediaType
                 return JsonSerializer.Deserialize<'T>("{}", options)
 
             elif ctx.Request.Body.CanSeek && ctx.Request.Body.Length = 0L then
@@ -251,10 +250,13 @@ let mapQuery
 let mapFormOptions
     (maxSize : int64)
     (map : FormData -> 'T)
-    (next : 'T -> HttpHandler) : HttpHandler = fun ctx ->
+    (next : 'T -> HttpHandler)
+    (handleInvalid : HttpHandler): HttpHandler = fun ctx ->
     task {
         let! form = getFormOptions maxSize ctx
-        return! next (map form) ctx
+        match form with
+        | Some f -> return! next (map f) ctx
+        | None -> return! handleInvalid ctx
     }
 
 /// Projects form dta onto 'T and provides to next HttpHandler.
@@ -272,11 +274,9 @@ let mapFormOptions
 /// - `next`: The next `HttpHandler` to invoke, which takes the mapped 'T as input.
 let mapForm
     (map : FormData -> 'T)
-    (next : 'T -> HttpHandler) : HttpHandler = fun ctx ->
-    task {
-        let! form = getForm ctx
-        return! next (map form) ctx
-    }
+    (next : 'T -> HttpHandler)
+    (handleInvalid : HttpHandler): HttpHandler =
+    mapFormOptions Multipart.DefaultMaxSize map next handleInvalid
 
 /// Validates the CSRF of the current request.
 ///

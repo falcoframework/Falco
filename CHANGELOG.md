@@ -10,11 +10,10 @@ All notable changes to this project will be documented in this file.
 - `Request.getFormOptions` to allow configuration of the maximum form size, with a default of `Multipart.DefaultMaxSize` (32MB).
 - Guards to `RequestValue.parse` to prevent oversized numerics or leading-zero numeric strings (non-decimal) from being parsed as floats.
 - Max size constraint to multipart form streaming, with a default of `Multipart.DefaultMaxSize` (32MB).
-- `FormData.IsValid` property to indicate whether CSRF validation succeeded for form requests.
 
 ### Changed
 
-- `Request.getForm` now automatically performs CSRF validation if antiforgery services are registered and the request method is POST, PUT, PATCH, or DELETE. Returns `FormData` with `IsValid = false` when validation fails.
+- `Request.getForm` now automatically performs CSRF validation if antiforgery services are registered and the request method is POST, PUT, PATCH, or DELETE. Returns `FormData option` when consumption or CSRF validation fails.
 - Increased multipart form streaming buffer size from 1024 to 8192 bytes to improve performance of large file uploads.
 - `Request.ifAuthenticatedInRole` accepts roles as `seq` instead of `list` for more flexible input options.
 - `Request.getJsonOptions` explicitly checks for application/json content type and empty body, returning default form of `T`. Returns 415 Unsupported Media Type response when content type is missing.
