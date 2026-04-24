@@ -68,14 +68,14 @@ module Routing =
     /// PUT HttpEndpoint constructor.
     ///
     /// - `pattern` - The route pattern to which the HttpHandler will be associated.
-    /// - `handler` - The HttpHandler to be associated with the PUT HttpVerb and
+    /// - `handler` - The HttpHandler to be associated with the PUT HttpVerb and provided route pattern.
     let put pattern handler =
         route PUT pattern handler
 
     /// PATCH HttpEndpoint constructor.
     ///
     /// - `pattern` - The route pattern to which the HttpHandler will be associated.
-    /// - `handler` - The HttpHandler to be associated with the PATCH HttpVerb and
+    /// - `handler` - The HttpHandler to be associated with the PATCH HttpVerb and provided route pattern.
     let patch pattern handler =
         route PATCH pattern handler
 
@@ -93,7 +93,7 @@ module Routing =
     let options pattern handler =
         route OPTIONS pattern handler
 
-    /// TRACE HttpEndpoint construct.
+    /// TRACE HttpEndpoint constructor.
     ///
     /// - `pattern` - The route pattern to which the HttpHandler will be associated.
     /// - `handler` - The HttpHandler to be associated with the TRACE HttpVerb and provided route pattern.
@@ -174,7 +174,7 @@ module Routing =
     let mapOptions pattern map handler =
         options pattern (Request.mapRoute map handler)
 
-    /// TRACE HttpEndpoint construct which maps the route using the provided
+    /// TRACE HttpEndpoint constructor which maps the route using the provided
     /// `map` function.
     ///
     /// - `pattern` - The route pattern to which the HttpHandler will be associated.

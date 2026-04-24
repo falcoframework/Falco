@@ -35,7 +35,6 @@ let withHeaders
 /// - `contentType` - The value to set for the Content-Type header.
 let withContentType
     (contentType : string) : HttpResponseModifier = fun ctx ->
-    ctx.Response.ContentType <- contentType
     withHeaders [ HeaderNames.ContentType, contentType ] ctx
 
 /// Set StatusCode for response.
@@ -121,7 +120,7 @@ let private writeBytes
 ///
 /// - `contentType` - The value to set for the Content-Type header.
 /// - `headers` - A list of additional header name and value pairs to add to the response.
-/// - `bytes` - The binary content to write to the response body.///
+/// - `bytes` - The binary content to write to the response body.
 let ofBinary
     (contentType : string)
     (headers : (string * string) list)

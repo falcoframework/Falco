@@ -280,7 +280,7 @@ let mapFormOptions
         | None -> return! handleInvalid ctx
     }
 
-/// Projects form dta onto 'T and provides to next HttpHandler.
+/// Projects form data onto 'T and provides to next HttpHandler.
 ///
 /// Performs CSRF validation for HTTP POST, PUT, PATCH, DELETE verbs, if antiforgery
 /// services are registered and a token is provided in the request.

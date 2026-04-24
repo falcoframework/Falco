@@ -99,8 +99,7 @@ module private RequestValueExtensions =
 
     let asBoolean requestValue =
         match asRequestPrimitive requestValue with
-        | Some (RBool x) when x -> Some true
-        | Some (RBool x) when not x -> Some false
+        | Some (RBool x) -> Some x
         | Some (RNumber x) when x = 0. -> Some false
         | Some (RNumber x) when x = 1. -> Some true
         | Some (RString x) when RequestData.trueValues.Contains x -> Some true
