@@ -157,4 +157,70 @@ module Tests =
         let ct = response.Content.Headers.ContentType.ToString()
         Assert.Contains("text/plain", ct)
 
+module AntiforgeryMultipartTests =
+    open System.Net
+    open Microsoft.AspNetCore.Hosting
+    open Microsoft.AspNetCore.TestHost
+    open Microsoft.Extensions.DependencyInjection
+
+    // Build a factory that registers antiforgery services on top of the
+    // integration test app. The antiforgery service is not registered by the
+    // base app so as not to affect other tests.
+    let private factory =
+        let baseFactory = FalcoOpenApiTestServer.createFactory ()
+        baseFactory.WithWebHostBuilder(fun b ->
+            b.ConfigureTestServices(fun services ->
+                services.AddAntiforgery() |> ignore)
+            |> ignore)
+
+    type private CsrfToken = { FormFieldName : string; RequestToken : string }
+
+    // The TestServer HttpClient has a default CookieContainer that replays
+    // Set-Cookie across requests — no manual cookie forwarding needed.
+    let private getCsrfToken (client : HttpClient) : CsrfToken =
+        let response = client.GetAsync("/csrf-token").Result
+        response.EnsureSuccessStatusCode() |> ignore
+        let body = response.Content.ReadAsStringAsync().Result
+        use doc = JsonDocument.Parse(body)
+        let root = doc.RootElement
+        { FormFieldName = root.GetProperty("FormFieldName").GetString()
+          RequestToken = root.GetProperty("RequestToken").GetString() }
+
+    [<Fact>]
+    let ``POST multipart/form-data with valid CSRF token succeeds via getForm`` () =
+        use client = factory.CreateClient ()
+        let token = getCsrfToken client
+
+        use content = new MultipartFormDataContent()
+        content.Add(new StringContent("Alice"), "name")
+        content.Add(new StringContent(token.RequestToken), token.FormFieldName)
+
+        let response = client.PostAsync("/form-with-csrf", content).Result
+        let body = response.Content.ReadAsStringAsync().Result
+
+        // Before the fix: antiforgery validation pre-reads the multipart body via
+        // ReadFormAsync, then consumeForm calls StreamFormAsync which fails with
+        // "Unexpected end of Stream", surfacing as a 500.
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode)
+        Assert.Equal("""{"Message":"Hello Alice!"}""", body)
+
+    [<Fact>]
+    let ``POST urlencoded form with valid CSRF token succeeds via getForm`` () =
+        // Regression guard for the non-multipart path, which was already working.
+        use client = factory.CreateClient ()
+        let token = getCsrfToken client
+
+        let form =
+            new FormUrlEncodedContent(
+                dict [
+                    ("name", "Bob")
+                    (token.FormFieldName, token.RequestToken)
+                ])
+
+        let response = client.PostAsync("/form-with-csrf", form).Result
+        let body = response.Content.ReadAsStringAsync().Result
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode)
+        Assert.Equal("""{"Message":"Hello Bob!"}""", body)
+
 module Program = let [<EntryPoint>] main _ = 0

@@ -93,15 +93,27 @@ let getQuery (ctx : HttpContext) : RequestData =
     RequestValue.parseQuery ctx.Request.Query
     |> RequestData
 
+/// If ASP.NET's form pipeline has already parsed and cached the form (e.g.
+/// antiforgery validation pre-read the body via ReadFormAsync), return it.
+/// Needed because the multipart `StreamFormAsync` path in `consumeForm` can
+/// only be taken once per request — a second read fails with
+/// "Unexpected end of Stream".
+let private tryGetCachedForm (ctx : HttpContext) : IFormCollection option =
+    if not ctx.Request.HasFormContentType then None
+    else
+        let feature = ctx.Features.Get<Microsoft.AspNetCore.Http.Features.IFormFeature>()
+        if isNull feature || isNull feature.Form then None
+        else Some feature.Form
+
 let private consumeForm (maxSize : int64) (ctx : HttpContext) =
     use tokenSource = new CancellationTokenSource()
 
     task {
         let! form =
-            if ctx.Request.IsMultipart() then
-                ctx.Request.StreamFormAsync (tokenSource.Token, maxSize)
-            else
-                ctx.Request.ReadFormAsync tokenSource.Token
+            match tryGetCachedForm ctx with
+            | Some cached -> Task.FromResult cached
+            | None when ctx.Request.IsMultipart() -> ctx.Request.StreamFormAsync (tokenSource.Token, maxSize)
+            | None -> ctx.Request.ReadFormAsync tokenSource.Token
 
         let files = if isNull form.Files then None else Some form.Files
         let requestValue = RequestValue.parseForm (form, Some ctx.Request.RouteValues)

@@ -3,7 +3,10 @@ module Falco.IntegrationTests.App
 open Falco
 open Falco.Markup
 open Falco.Routing
+open Falco.Security
+open Microsoft.AspNetCore.Antiforgery
 open Microsoft.AspNetCore.Builder
+open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 
@@ -63,23 +66,50 @@ let endpoints =
 
         post "/api/message"
             (Request.mapJson Response.ofJson)
+
+        // Endpoint that emits an antiforgery token (for tests)
+        get "/csrf-token" (fun ctx ->
+            let token = Xsrf.getToken ctx
+            Response.ofJson
+                {| FormFieldName = token.FormFieldName
+                   RequestToken = token.RequestToken |}
+                ctx)
+
+        // Endpoint that consumes a form while antiforgery is enabled. This
+        // exercises Request.getForm, which validates the CSRF token and then
+        // reads the form. For multipart requests with a valid token, the
+        // antiforgery validation pre-reads the body; previously, consumeForm
+        // would then call StreamFormAsync again and fail with
+        // "Unexpected end of Stream".
+        post "/form-with-csrf" (fun ctx -> task {
+            let! form = Request.getForm ctx
+            match form with
+            | Some f ->
+                let name = f.Get("name").AsStringNonEmpty("")
+                return! Response.ofJson {| Message = $"Hello {name}!" |} ctx
+            | None ->
+                ctx.Response.StatusCode <- 400
+                return! Response.ofPlainText "invalid" ctx })
     ]
 
-let bldr = WebApplication.CreateBuilder()
-
-bldr.Services
-    .AddSingleton<IGreeter, FriendlyGreeter>()
-|> ignore
-
-let wapp = bldr.Build()
-
-wapp.UseHttpsRedirection()
-|> ignore
-
-wapp.UseRouting()
-    .UseFalco(endpoints)
-|> ignore
-
-wapp.Run()
-
 type Program() = class end
+
+module Main =
+    [<EntryPoint>]
+    let main args =
+        let bldr = WebApplication.CreateBuilder(args)
+
+        bldr.Services
+            .AddSingleton<IGreeter, FriendlyGreeter>()
+        |> ignore
+
+        let wapp = bldr.Build()
+
+        wapp.UseHttpsRedirection() |> ignore
+
+        wapp.UseRouting()
+            .UseFalco(endpoints)
+        |> ignore
+
+        wapp.Run()
+        0
