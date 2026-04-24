@@ -92,21 +92,24 @@ let endpoints =
                 return! Response.ofPlainText "invalid" ctx })
     ]
 
-let bldr = WebApplication.CreateBuilder()
-
-bldr.Services
-    .AddSingleton<IGreeter, FriendlyGreeter>()
-|> ignore
-
-let wapp = bldr.Build()
-
-wapp.UseHttpsRedirection()
-|> ignore
-
-wapp.UseRouting()
-    .UseFalco(endpoints)
-|> ignore
-
-wapp.Run()
-
 type Program() = class end
+
+module Main =
+    [<EntryPoint>]
+    let main args =
+        let bldr = WebApplication.CreateBuilder(args)
+
+        bldr.Services
+            .AddSingleton<IGreeter, FriendlyGreeter>()
+        |> ignore
+
+        let wapp = bldr.Build()
+
+        wapp.UseHttpsRedirection() |> ignore
+
+        wapp.UseRouting()
+            .UseFalco(endpoints)
+        |> ignore
+
+        wapp.Run()
+        0
