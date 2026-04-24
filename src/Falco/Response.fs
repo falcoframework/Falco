@@ -35,6 +35,7 @@ let withHeaders
 /// - `contentType` - The value to set for the Content-Type header.
 let withContentType
     (contentType : string) : HttpResponseModifier = fun ctx ->
+    ctx.Response.ContentType <- contentType
     withHeaders [ HeaderNames.ContentType, contentType ] ctx
 
 /// Set StatusCode for response.
