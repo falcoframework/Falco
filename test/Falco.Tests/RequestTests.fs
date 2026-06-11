@@ -464,7 +464,7 @@ let ``Request.ifAuthenticated should allow authenticated users`` () =
 
 
 [<Fact>]
-let ``Request.ifNotAuthenticated should block non-authenticated users`` () =
+let ``Request.ifNotAuthenticated should block authenticated users`` () =
     let ctx = getHttpContextWriteable false
 
     let mutable visited = false
@@ -494,6 +494,28 @@ let ``Request.ifAuthenticatedInRole should allow users in correct role`` () =
     }
 
 [<Fact>]
+let ``Request.ifAuthenticatedInRole should allow users who have one of the required roles, but not all`` () =
+    let ctx = getHttpContextWriteable true
+
+    let mutable visited = false
+
+    let handle : HttpHandler = fun ctx ->
+        visited <- true
+        Response.ofEmpty ctx
+
+    task {
+        let roleTheUserHas = Common.AuthRoles[0];
+        let acceptableRoles = 
+            seq {
+                "roleTheUserDoesNotHave";
+                roleTheUserHas;
+                "anotherRoleTheUserDoeNotHave";
+            }
+        do! Request.ifAuthenticatedInRole AuthScheme acceptableRoles handle ctx
+        visited |> should equal true
+    }    
+
+[<Fact>]
 let ``Request.ifAuthenticatedInRole should block users not in role`` () =
     let ctx = getHttpContextWriteable true
 
@@ -521,4 +543,4 @@ let ``Request.ifAuthenticatedInRole should block non-authenticated users`` () =
     task {
         do! Request.ifAuthenticatedInRole AuthScheme ["admin2"] handle ctx
         visited |> should equal false
-    }    
+    }
