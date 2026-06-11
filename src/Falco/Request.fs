@@ -398,9 +398,9 @@ let ifAuthenticatedInRole
     (roles : string seq)
     (handleOk : HttpHandler) : HttpHandler =
     authenticate authScheme (fun authenticateResult ctx ->
-        let isInRole = Seq.exists authenticateResult.Principal.IsInRole roles
-        match authenticateResult.Succeeded, isInRole with
-        | true, true ->
+        let isInRole = authenticateResult.Succeeded && Seq.exists authenticateResult.Principal.IsInRole roles
+        match isInRole with
+        | true ->
             handleOk ctx
         | _ ->
             ctx.ForbidAsync())

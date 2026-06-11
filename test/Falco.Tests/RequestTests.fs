@@ -509,7 +509,7 @@ let ``Request.ifAuthenticatedInRole should block users not in role`` () =
     }
 
 [<Fact>]
-let ``UniqueTestNameGuid: 2ba53dd9-ba2b-4bd0-8009-f7fa34cabd03; Request.ifAuthenticatedInRole should block non-authenticated users`` () =
+let ``Request.ifAuthenticatedInRole should block non-authenticated users`` () =
     let ctx = getHttpContextWriteable false
 
     let mutable visited = false
