@@ -1,3 +1,5 @@
+> This branch is purely for the continued maintenance of v5.
+
 # Falco
 
 [![NuGet Version](https://img.shields.io/nuget/v/Falco.svg)](https://www.nuget.org/packages/Falco)
