@@ -67,27 +67,23 @@ The best way to get started is by visiting the [documentation](https://falcofram
 - Hamilton Greene - [Why I'm Ditching F# + Giraffe For Falco For Building WebApps](https://www.youtube.com/watch?v=tonPeWfu_WM)
 - Ben Gobeil - [Why I'm Using Falco Instead Of Saturn | How To Switch Your Backend In SAFE Stack | StonkWatch Ep.13](https://youtu.be/DTy5gIUWvpo)
 
-
 ## Contribute
 
-We kindly ask that before submitting a pull request, you first submit an [issue](https://github.com/FalcoFramework/Falco/issues) or open a [discussion](https://github.com/FalcoFramework/Falco/discussions).
+Before submitting a pull request, submit an [issue](https://github.com/FalcoFramework/Falco/issues) or open a [discussion](https://github.com/FalcoFramework/Falco/discussions).
 
-If functionality is added to the API, or changed, please kindly update the relevant [document](/docs). Unit tests must also be added and/or updated before a pull request can be successfully merged.
+If functionality is added to the API, or changed, please kindly update any relevant documents. Unit tests must also be added and/or updated before a pull request can be successfully merged.
 
-Only pull requests which pass all build checks and comply with the general coding standard can be approved.
+Only pull requests which pass all build checks and comply with the project's coding standard can be approved.
 
-If you have any further questions, submit an [issue](https://github.com/FalcoFramework/Falco/issues) or open a [discussion](https://github.com/FalcoFramework/Falco/discussions) or reach out on [Twitter](https://twitter.com/falco_framework).
-
+If you have any further questions, submit an [issue](https://github.com/FalcoFramework/Falco/issues) or open a [discussion](https://github.com/FalcoFramework/Falco/discussions).
 
 ## Why "Falco"?
 
 [Kestrel](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/servers/kestrel) has been a game changer for the .NET web stack. In the animal kingdom, "Kestrel" is a name given to several members of the falcon genus. Also known as "Falco".
 
-
 ## Find a bug?
 
 There's an [issue](https://github.com/FalcoFramework/Falco/issues) for that.
-
 
 ## License
 
