@@ -4,104 +4,72 @@ open Falco
 open Falco.Markup
 open Falco.Routing
 open Microsoft.AspNetCore.Builder
+open Microsoft.Extensions.DependencyInjection
 
-module Model =
-    type NameGreeting =
-        { Name : string }
-
-    type Greeting =
-        { Message : string }
-
-module Route =
-    let index = "/"
-    let greetPlainText = "/greet/text/{name?}"
-    let greetJson = "/greet/json/{name?}"
-    let greetHtml = "/greet/html/{name?}"
-
-module Url =
-    let greetPlainText name = Route.greetPlainText.Replace("{name?}", name)
-    let greetJson name = Route.greetJson.Replace("{name?}", name)
-    let greetHtml name = Route.greetHtml.Replace("{name?}", name)
+type Greeting =
+    { Name : string }
 
 module View =
-    open Model
-
     let layout content =
         Templates.html5 "en"
             [ _link [ _href_ "/style.css"; _rel_ "stylesheet" ] ]
             content
 
-    module GreetingView =
-        let detail greeting =
-            layout [
-                _h1' $"Hello {greeting.Name} using HTML"
-                _hr []
-                _p' "Greet other ways:"
-                _nav [] [
-                    _a
-                        [ _href_ (Url.greetHtml greeting.Name) ]
-                        [ _text "Greet in HTML"]
-                    _text " | "
-                    _a
-                        [ _href_ (Url.greetPlainText greeting.Name) ]
-                        [ _text "Greet in plain text"]
-                    _text " | "
-                    _a
-                        [ _href_ (Url.greetJson greeting.Name) ]
-                        [ _text "Greet in JSON " ]
-                ]
+    let menu greeting actions =
+        _nav [] [
+            _text " | "
+            for url, label in actions do
+                _a
+                    [ _href_ (url greeting.Name) ]
+                    [ _text label ]
+                _text " | "
+        ]
+
+module GreetingView =
+    let detail actions greeting =
+        View.layout [
+            _h1' $"Hello {greeting.Name} using HTML"
+            _form [] [
+                _input [ _name_ "name"; _placeholder_ "Enter your name" ]
+                _input [_typeSubmit_ ]
             ]
+            _hr []
+            _p' "Greet other ways:"
+            View.menu greeting actions
+        ]
 
-module Controller =
-    open Model
-    open View
+module ErrorResponse =
+    let notFound =
+        Response.withStatusCode 404 >>
+        Response.ofHtml (View.layout [ _h1' "Not Found" ])
 
-    /// Error page(s)
-    module ErrorController =
-        let notFound : HttpHandler =
-            Response.withStatusCode 404 >>
-            Response.ofHtml (layout [ _h1' "Not Found" ])
+    let serverException =
+        Response.withStatusCode 500 >>
+        Response.ofHtml (View.layout [ _h1' "Server Error" ])
 
-        let serverException : HttpHandler =
-            Response.withStatusCode 500 >>
-            Response.ofHtml (layout [ _h1' "Server Error" ])
+module GreetingController =
+    let index name =
+        { Name = name }
+        |> GreetingView.detail [
+            sprintf "/greet/text?name=%s", "Greet in plain text"
+            sprintf "/greet/json?name=%s", "Greet in JSON" ]
+        |> Response.ofHtml
 
-        let endpoints =
-            [ get "/error/not-found" notFound
-              get "/error/server-exception" serverException ]
+    let plainTextDetail name =
+        Response.ofPlainText $"Hello {name} using plain text"
 
-    module GreetingController =
-        let index name =
-            { Name = name }
-            |> GreetingView.detail
-            |> Response.ofHtml
+    let jsonDetail name =
+        Response.ofJson {| Message = $"Hello {name} using JSON" |}
 
-        let plainTextDetail name =
-            Response.ofPlainText $"Hello {name} using plain text"
-
-        let jsonDetail name =
-            let message = { Message = $"Hello {name} using JSON" }
-            Response.ofJson message
-
-        let endpoints =
-            let mapRoute (r : RequestData) =
-                r?name.AsStringNonEmpty("you")
-
-            [ mapGet Route.index mapRoute index
-              mapGet Route.greetPlainText mapRoute plainTextDetail
-              mapGet Route.greetJson mapRoute jsonDetail
-              mapGet Route.greetHtml mapRoute index ]
-
-module App =
-    open Controller
+    let mapName (r : RequestData) =
+        r?name.AsStringNonEmpty "World"
 
     let endpoints =
-        ErrorController.endpoints
-        @ GreetingController.endpoints
+        [ mapGet "/" mapName index
+          mapGet "/greet/text" mapName plainTextDetail
+          mapGet "/greet/json" mapName jsonDetail ]
 
 module Program =
-    open Controller
-
     [<EntryPoint>]
     let main args =
         let wapp = WebApplication.Create(args)
@@ -109,10 +77,10 @@ module Program =
         let isDevelopment = wapp.Environment.EnvironmentName = "Development"
 
         wapp.UseIf(isDevelopment, DeveloperExceptionPageExtensions.UseDeveloperExceptionPage)
-            .UseIf(not(isDevelopment), FalcoExtensions.UseFalcoExceptionHandler ErrorController.serverException)
+            .UseIf(not isDevelopment, FalcoExtensions.UseFalcoExceptionHandler(ErrorResponse.serverException))
             .Use(StaticFileExtensions.UseStaticFiles)
             .UseRouting()
-            .UseFalco(App.endpoints)
-            .Run(ErrorController.notFound)
+            .UseFalco(GreetingController.endpoints)
+            .Run(ErrorResponse.notFound)
 
         0
