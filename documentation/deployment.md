@@ -4,7 +4,7 @@ One of the key features of Falco is that it contains little to no "magic" (i.e.,
 
 This means that you can deploy your Falco application as a self-contained executable, or as a native AOT executable, with no additional configuration. A huge benefit of this is that you can deploy your Falco application to any environment, without having to worry about the underlying runtime or dependencies.
 
-> Important! If you're in a __scale-to-zero__ hosting environment consider using a [ReadyToRun](https://learn.microsoft.com/en-us/dotnet/core/deploying/ready-to-run) deployment. This will ensure that your application will experience faster cold start times.
+> Important! If you're in a __scale-to-zero__ hosting environment consider using a [ReadyToRun](https://learn.microsoft.com/en-us/dotnet/core/deploying/ready-to-run) deployment. This will ensure that your application will experience faster cold start times, but will slightly increase the size of the deployment package.
 
 ## Self-contained deployments
 

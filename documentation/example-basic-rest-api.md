@@ -6,7 +6,7 @@ The API will be built using the following components, in addition to the Falco f
 - [System.Data.SQLite](https://www.nuget.org/packages/System.Data.SQLite/), which provides SQLite support, built and maintained by the SQLite developers.
 - [Donald](https://www.nuget.org/packages/Donald/) which simplifies database access, built and maintained by the Falco developers.
 
-> For simplicity, we'll stick to sychronous database access in this example. However, you can easily adapt the code to use asynchronous database access if needed. Specific to SQLite, in many cases it is better to use synchronous access, and let SQLite handle serialization for you.
+> For simplicity, we'll stick to synchronous database access in this example. However, you can easily adapt the code to use asynchronous database access if needed. Specific to SQLite, in many cases it is better to use synchronous access, and let SQLite handle serialization for you.
 
 The code for this example can be found [here](https://github.com/FalcoFramework/Falco/tree/master/examples/BasicRestApi).
 
@@ -21,14 +21,15 @@ The code for this example can be found [here](https://github.com/FalcoFramework/
 
 ## Overview
 
-The API will consist of four endpoints:
+The API will consist of five endpoints:
 
 - `GET /users`: Retrieve all users.
 - `GET /users/{username}`: Retrieve a user by username.
 - `POST /users`: Create a new user.
+- `POST /users/{username}`: Update an existing user.
 - `DELETE /users/{username}`: Delete a user by username.
 
-Users will be stored in a SQLite database, and the API will use Donald to interact with the database. Our user model will be a simple record type with two properties: `Username` and `Full Name`.
+Users will be stored in a SQLite database, and the API will use Donald to interact with the database. Our user model will be a simple record type with two properties: `Username` and `FullName`.
 
 ```fsharp
 type User =
@@ -36,7 +37,7 @@ type User =
       FullName : string }
 ```
 
-It's also valueable to have a concrete type to represent API errors. This will be used to return error messages in a consistent format.
+It's also valuable to have a concrete type to represent API errors. This will be used to return error messages in a consistent format.
 
 ```fsharp
 type Error =
@@ -55,6 +56,18 @@ type IDbConnectionFactory =
     abstract member Create : unit -> IDbConnection
 ```
 
+To implement this we'll use SQLite and a small configuration object to pass in the connection string.
+
+```fsharp
+type SqliteConnectionSettings() =
+    member val ConnectionString = "" with get, set
+
+type SqliteConnectionFactory(settings : SqliteConnectionSettings) =
+    interface IDbConnectionFactory with
+        member _.Create() =
+            new SQLiteConnection(settings.ConnectionString) :> IDbConnection
+```
+
 We'll also define an interface for performing list, create, read and delete operations against a set of entities.
 
 ```fsharp
@@ -64,9 +77,54 @@ type IStore<'TKey, 'TItem> =
     abstract member Read : 'TKey -> 'TItem option
     abstract member Delete : 'TKey -> Result<unit, Error>
 ```
-The `IStore` interface is generic, allowing us to use it with any type of entity. In our case, we'll create a concrete implementation for the `User` entity.
+The `IStore` interface is generic, allowing us to use it with any type of entity. In our case, we'll create a concrete implementation for the `User` entity with `string` as the key type. Our implementation will depend on `IDbConnectionFactory` for creating new database connections. Each method will create it's own `IDbConnection` using the provided `IDbConnectionFactory`.
 
-## Implementing the Store
+Let's define the `List()` method first, which performs a basic `SELECT` statement, queries for the results and maps them using a locally defined function.
+
+```fsharp
+type UserStore(dbConnection : IDbConnectionFactory) =
+    let userOfDataReader (rd : IDataReader) =
+        { Username = rd.ReadString "username"
+          FullName = rd.ReadString "full_name" }
+
+    interface IStore<string, User> with
+        member _.List() =
+            use conn = dbConnection.Create()
+            conn
+            |> Db.newCommand "SELECT username, full_name FROM user"
+            |> Db.query userOfDataReader
+
+```
+
+Next we'll implement the `Create()` method, which executes an `INSERT` using the provided new user details. In the case of an execution exception, the method will return an `Error` Result, otherwise `Ok`.
+
+```fsharp
+type UserStore(dbConnection : IDbConnectionFactory) =
+    // .. rest of code
+
+    interface IStore<string, User> with
+        // .. rest of code
+        member _.Create(user : User) =
+            use conn = dbConnection.Create()
+            try
+                conn
+                |> Db.newCommand "
+                    INSERT INTO user (username, full_name)
+                    SELECT    @username
+                            , @full_name
+                    WHERE     @username NOT IN (
+                                SELECT username FROM user)"
+                |> Db.setParams [
+                    "username", SqlType.String user.Username
+                    "full_name", SqlType.String user.FullName ]
+                |> Db.exec
+                |> Ok
+            with
+            | :? DbExecutionException ->
+                Error { Code = "FAILED"; Message = "Could not add user" }
+```
+
+We won't go over the remaining implementation here, but you review the full source code [here](https://github.com/FalcoFramework/Falco/tree/master/examples/BasicRestApi)
 
 ## Error Responses
 
@@ -91,22 +149,22 @@ Here you can see our error type in action, which is used to return a JSON respon
 
 ## Defining the Endpoints
 
-It can be very useful to define values for the endpoints we want to expose. This allows us to easily change the endpoint paths in one place if needed, and also provides intellisense support when using the endpoints in our code.
+In Falco version 6, the `IFalcoModule` was introduced. It helps organize endpoints and facilitates dependency injection through constructor arguments. Using the `IFalcoModule` is entirely optional, but does have the added advantage of resolving all dependencies at startup instead of runtime (when using `ctx.Plug<T>()`)
 
 ```fsharp
-module Route =
-    let userIndex = "/users"
-    let userAdd = "/users"
-    let userView = "/users/{username}"
-    let userRemove = "/users/{username}"
+type UserModule(userStore : IStore<string, User>) =
+    // .. HttpHandlers
+    interface IFalcoModule with
+        member _.Endpoints = seq {
+            // .. HttpEndpoints
+        }
 ```
 
 Next, let's implement the handlers for each of the endpoints. First, we'll implement the `GET /users` endpoint, which retrieves all users from the database.
 
 ```fsharp
-module UserEndpoint =
+type UserModule(userStore : IStore<string, User>) =
     let index : HttpHandler = fun ctx ->
-        let userStore = ctx.Plug<IStore<string, User>>()
         let allUsers = userStore.List()
         Response.ofJson allUsers ctx
 ```
@@ -115,94 +173,94 @@ The `index` function retrieves the `IStore` instance from the dependency contain
 Next, we'll implement the `POST /users` endpoint, which creates a new user.
 
 ```fsharp
-module UserEndpoint =
-    // ... index handler ...
+type UserModule(userStore : IStore<string, User>) =
+    // .. HttpHandlers
     let add : HttpHandler = fun ctx -> task {
-        let userStore = ctx.Plug<IStore<string, User>>()
         let! userJson = Request.getJson<User> ctx
-        let userAddResponse =
-            match userStore.Create(userJson) with
-            | Ok result -> Response.ofJson result ctx
-            | Error error -> ErrorResponse.badRequest error ctx
-        return! userAddResponse }
+        if String.IsNullOrWhiteSpace(userJson.Username)
+           || String.IsNullOrWhiteSpace(userJson.FullName) then
+            return! ErrorResponse.badRequest
+                { Code = "400"; Message = "Username and Full name are both required" } ctx
+        else
+            let userAddResponse =
+                match userStore.Create userJson with
+                | Ok result -> Response.ofJson result
+                | Error error -> ErrorResponse.badRequest error
+
+            return! userAddResponse ctx }
 ```
 
-The `add` function retrieves the `IStore` instance from the dependency container and calls the `Create` method to add a new user. The result is then returned as a JSON response. If the user creation fails, we return a bad request error.
+The `add` function uses the `IStore<string, User>` and calls the `Create` method to add a new user. The result is then returned as a JSON response. If the user creation fails, we return a bad request error.
 
 Next, we'll implement the `GET /users/{username}` endpoint, which retrieves a user by username.
 
 ```fsharp
-module UserEndpoint =
-    // ... index and add handlers ...
-    let view : HttpHandler = fun ctx ->
-        let userStore = ctx.Plug<IStore<string, User>>()
-        let route = Request.getRoute ctx
-        let username = route?username.AsString()
-        match userStore.Read(username) with
-        | Some user -> Response.ofJson user ctx
-        | None -> ErrorResponse.notFound ctx
+type UserModule(userStore : IStore<string, User>) =
+    // .. HttpHandlers
+    let view username =
+        let userResponse =
+            match userStore.Read username with
+            | Some user -> Response.ofJson user
+            | None -> ErrorResponse.notFound
+        userResponse
 ```
 
-The `view` function retrieves the `IStore` instance from the dependency container and calls the `Read` method to get a user by username. If the user is found, it is returned as a JSON response. If not, we return a not found error.
+The `view` function uses the `IStore<string, User>` and calls the `Read` method to get a user by username. If the user is found, it is returned as a JSON response. If not, we return a not found error.
 
 Finally, we'll implement the `DELETE /users/{username}` endpoint, which deletes a user by username.
 
 ```fsharp
-module UserEndpoint =
-    // ... index, add and view handlers ...
-    let remove : HttpHandler = fun ctx ->
-        let userStore = ctx.Plug<IStore<string, User>>()
-        let route = Request.getRoute ctx
-        let username = route?username.AsString()
-        match userStore.Delete(username) with
-        | Ok result -> Response.ofJson result ctx
-        | Error error -> ErrorResponse.badRequest error ctx
+type UserModule(userStore : IStore<string, User>) =
+    // ... HttpHandlers ...
+    let remove username =
+        let response =
+            match userStore.Delete username with
+            | Ok result -> Response.ofJson result
+            | Error error -> ErrorResponse.badRequest error
+        response
 ```
 
-The `remove` function retrieves the `IStore` instance from the dependency container and calls the `Delete` method to remove a user by username. The result is then returned as a JSON response. If the user deletion fails, we return a bad request error.
+The `remove` function uses the `IStore<string, User>` and calls the `Delete` method to remove a user by username. The result is then returned as a JSON response. If the user deletion fails, we return a bad request error.
 
 ## Configuring the Application
 
-Conventionally, you'll configure your database outside of your application scope. For the purpose of this example, we'll define and initialize the database during startup.
+Conventionally, you'll configure your database outside of your application scope. For the purpose of this example, we'll define and initialize the database during startup. First we extract the database settings from the configuration (appsettings.json) and make them available through dependency injection. Then we register our SQLite connection factory using these settings, while at the same time initializing the database.
+
+Next we register our `UserStore` as `IStore<string, User>` and our `UserModule`, which enables endpoint discovery.
 
 ```fsharp
 module Program =
     [<EntryPoint>]
     let main args =
-        let dbConnectionFactory =
-            { new IDbConnectionFactory with
-                member _.Create() = new SQLiteConnection("Data Source=BasicRestApi.sqlite3") }
-
-        let initializeDatabase (dbConnection : IDbConnectionFactory) =
-            use conn = dbConnection.Create()
-            conn
-            |> Db.newCommand "CREATE TABLE IF NOT EXISTS user (username, full_name)"
-            |> Db.exec
-
-        initializeDatabase dbConnectionFactory
-
-        // ... rest of the application setup
-```
-
-First we implement the `IDbConnectionFactory` interface, which creates a new SQLite connection. Then we define a `initializeDatabase` function, which creates the database and the user table if it doesn't exist. We encapsulate the database initialization in a function, so we can quickly dispose of the connection after use.
-
-Next, we need to register our database connection factory and the `IStore` implementation in the dependency container.
-
-```fsharp
-module Program =
-    [<EntryPoint>]
-    let main args =
-        // ... database initialization ...
-        let bldr = WebApplication.CreateBuilder(args)
+        let bldr = WebApplication.CreateBuilder()
 
         bldr.Services
-            .AddAntiforgery()
-            .AddScoped<IDbConnectionFactory>(dbConnectionFactory)
-            .AddScoped<IStore<string, User>, UserStore>()
+            .Configure<SqliteConnectionSettings>(bldr.Configuration.GetSection "Sqlite")
+            .AddSingleton<SqliteConnectionSettings>(fun ctx ->
+                ctx.GetRequiredService<IOptions<SqliteConnectionSettings>>().Value)
+            // ^-- extract the SQLite settings from the configuration
+            //     and register in the container
+            .AddSingleton<IDbConnectionFactory>(fun ctx ->
+                let dbSettings = ctx.GetRequiredService<SqliteConnectionSettings>()
+                let db = new SqliteConnectionFactory(dbSettings) :> IDbConnectionFactory
+                // setup our db during connection factory initialization
+                use conn = db.Create()
+                conn
+                |> Db.newCommand "CREATE TABLE IF NOT EXISTS user (username, full_name)"
+                |> Db.exec
+                db)
+            // ^-- register the SQLite IDbConnectionFactory implementation
+            //     and initialize the database
+            .AddSingleton<IStore<string, User>, UserStore>()
+            // ^-- register the User store
+            .AddSingleton<IFalcoModule, UserModule>()
+            // ^-- register the Falco module to expose the endpoints
             |> ignore
+
+        // .. web server build
 ```
 
-Finally, we need to configure the application to use the defined endpoints.
+Finally, we need to build and run the application.
 
 ```fsharp
 module Program =
@@ -214,12 +272,12 @@ module Program =
         let isDevelopment = wapp.Environment.EnvironmentName = "Development"
 
         wapp.UseIf(isDevelopment, DeveloperExceptionPageExtensions.UseDeveloperExceptionPage)
-            .UseIf(not(isDevelopment), FalcoExtensions.UseFalcoExceptionHandler ErrorResponse.serverException)
+            .UseIf(not isDevelopment, FalcoExtensions.UseFalcoExceptionHandler ErrorResponse.serverException)
             .UseRouting()
-            .UseFalco(App.endpoints)
+            .UseFalco()
             .Run(ErrorResponse.notFound)
 
-        0 // Exit code
+        0
 ```
 
 The `UseFalco` method is used to register the endpoints, and the `Run` method is used to handle requests that don't match any of the defined endpoints.

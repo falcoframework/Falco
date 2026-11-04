@@ -19,6 +19,7 @@ type GreetingModule(greeter : IGreeter) =
 
     let mapName (r : RequestData) =
         r?name.AsStringNonEmpty "World"
+        // ^ -- small helper function to map route
 
     interface IFalcoModule with
         member _.Endpoints = seq {
@@ -36,7 +37,7 @@ bldr.Services
     |> ignore
 
 let wapp = bldr.Build()
-// ^-- manifest our WebApplication
+// ^-- construct our WebApplication
 
 wapp.UseRouting()
     .UseFalco()

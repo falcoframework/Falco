@@ -30,7 +30,7 @@ type FriendlyGreeter() =
             $"Hello {name} 😀"
 ```
 
-Simple enough, we describe an `IGreeter` as having the ability to `Greet` in the form of receiving a name string and return a string message. Next we define an implementation that fulfills this interface in a friendly way.
+Simple enough, we describe an `IGreeter` as having the ability to `Greet` in the form of receiving a name string and return a string message. Then we define an implementation that fulfills this interface in a friendly way.
 
 ## Falco Modules
 
@@ -53,7 +53,7 @@ type GreetingModule(greeter : IGreeter) =
         }
 ```
 
-Let's unpack what's happening here. First we define the class `GreetingModule` which has a constructor with one parameter `greeter` representing the registered implementation of `IGreeter`. The dependency injection container will provide this automatically for us when it constructs this class, also registered in the container. The `detail` handler is self-explanatory, it expects a `string` which is mapped from the URL via `mapName`. Finally we implement the `IFalcoModule` interface by defining the `Endpoints` member.
+Let's unpack what's happening here. First we define the class `GreetingModule` which has a constructor with one parameter `greeter` representing the registered implementation of `IGreeter`. The dependency injection container will provide this automatically for us when it constructs this class. The `detail` handler is self-explanatory, it expects a `string` which is mapped from the URL via `mapName`. Finally we implement the `IFalcoModule` interface by defining the `Endpoints` member.
 
 ## Registering the Dependencies
 
@@ -77,7 +77,7 @@ bldr.Services
     |> ignore
 
 let wapp = bldr.Build()
-// ^-- manifest our WebApplication
+// ^-- construct our WebApplication
 
 wapp.UseRouting()
     .UseFalco()

@@ -61,7 +61,7 @@ module GreetingController =
     let jsonDetail name =
         Response.ofJson {| Message = $"Hello {name} using JSON" |}
 
-    let mapName (r : RequestData) =
+    let private mapName (r : RequestData) =
         r?name.AsStringNonEmpty "World"
 
     let endpoints =

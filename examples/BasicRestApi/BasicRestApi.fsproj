@@ -5,6 +5,7 @@
   <ItemGroup>
     <PackageReference Include="Donald" Version="10.*" />
     <PackageReference Include="System.Data.SQLite" Version="2.*" />
+    <PackageReference Include="SQLite" Version="3.*"/>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Falco/Falco.fsproj" />

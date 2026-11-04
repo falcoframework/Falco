@@ -12,14 +12,14 @@ The code for this example can be found [here](https://github.com/FalcoFramework/
 
 ## Model
 
-Since this app has no persistence, the model is somewhat boring. But included here to demonstrate the concept.
-
-We define a record type to contain the patron name.
+The purpose of our application is to greet people in multiple formats. Common to all formats is the input name used to produce the greeting. So let's create a type to represent the _input_ that constitutes a greeting.
 
 ```fsharp
 type Greeting =
     { Name : string }
 ```
+
+It's a simple model in this case because our application is purposefully simple. We're not in model school.
 
 ## View
 
@@ -90,7 +90,7 @@ Here we see the [`HttpResponseModifier`](repsonse.md#response-modifiers) at play
 
 ## Controller
 
-Our controller will be responsible for four actions, as defined in our [route](#routing) module. We define four handlers, one parameterless greeting and three others which output the user provided "name" in different ways: plain text, JSON and HTML.
+Our controller will be responsible for three actions, as defined in our [route](#routing) module. We define three handlers which output the user provided "name" in different ways: plain text, JSON and HTML.
 
 ```fsharp
 module GreetingController =
@@ -107,7 +107,7 @@ module GreetingController =
     let jsonDetail name =
         Response.ofJson {| Message = $"Hello {name} using JSON" |}
 
-    let mapName (r : RequestData) =
+    let private mapName (r : RequestData) =
         r?name.AsStringNonEmpty "World"
 
     let endpoints =

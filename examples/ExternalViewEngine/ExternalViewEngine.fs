@@ -6,78 +6,70 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.Extensions.DependencyInjection
 open Scriban
 
-type ITemplate =
-    abstract member Render : template: string * model: obj -> string
+type Greeting =
+    { Name : string }
 
-type ScribanTemplate() =
-    interface ITemplate with
-        member _.Render(template, model) =
-            let tmpl = Template.Parse template
-            tmpl.Render(model)
+type IViewEngine =
+    abstract member Render : title: string * model: obj * template: string -> string
 
-module Pages =
-    let private renderPage pageTitle template viewModel : HttpHandler = fun ctx ->
-        let templateService = ctx.Plug<ITemplate>()
-        // ^-- obtain our template service from the dependency container
-
-        let pageContent = templateService.Render(template, viewModel)
-        // ^-- render our template with the provided view model as string literal
-
-        let htmlTemplate = """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="utf-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <title>{{ title }}</title>
-            </head>
-            <body>
-                {{ content }}
-            </body>
-            </html>
+type PageViewEngine() =
+    let htmlTemplate = Template.Parse """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>{{ title }}</title>
+        </head>
+        <body>
+            {{ content }}
+        </body>
+        </html>
         """
-        // ^-- these triple quoted strings auto-escape characters like double quotes for us
-        //     very practical for things like HTML
+        // ^-- parse the HTML template once during construction
 
-        let html = templateService.Render(htmlTemplate, {| Title = pageTitle; Content = pageContent |})
+    interface IViewEngine with
+        member _.Render(title, model, template) =
+            let viewTemplate = Template.Parse template
+            let content = viewTemplate.Render model
+            htmlTemplate.Render {| Title = title; Content = content |}
 
-        Response.ofHtmlString html ctx
-        // ^-- return template literal as "text/html; charset=utf-8" response
-
-    let homepage : HttpHandler = fun ctx ->
-        let query = Request.getQuery ctx
-        // ^-- obtain access to strongly-typed representation of the query string
-
-        let viewModel = {| Name = query?name.AsStringNonEmpty("World") |}
-        // ^-- access 'name' from query, or default to 'World'
-
-        let template = """
+type PageModule(viewEngine : IViewEngine) =
+    let homepage model =
+        viewEngine.Render($"Hello {model.Name}", model, """
             <h1>Hello {{ name }}!</h1>
-        """
-        renderPage $"Hello {viewModel.Name}" template viewModel ctx
+            <form>
+                <input name="name" placeholder="enter your name">
+                <input type="submit">
+            </form>
+        """)
+        // ^-- these triple quoted strings auto-escape characters like double quotes
+        //     for us very practical for things like HTML
+        |> Response.ofHtmlString
 
-    let notFound : HttpHandler =
-        let template = """
-            <h1>Page not found</h1>
-        """
-        renderPage "Page Not Found" template {||}
+    let mapName (r : RequestData) =
+        { Name = r?name.AsStringNonEmpty "World" }
+
+    interface IFalcoModule with
+        member _.Endpoints = seq {
+            mapGet "/" mapName homepage
+        }
 
 [<EntryPoint>]
 let main args =
     let bldr = WebApplication.CreateBuilder(args)
 
     bldr.Services
-        .AddSingleton<ITemplate, ScribanTemplate>()
-        // ^-- register ITemplates implementation as a dependency
+        .AddSingleton<IViewEngine, PageViewEngine>()
+        // ^-- register Scriban implementation as a dependency
+        .AddSingleton<IFalcoModule, PageModule>()
+        // ^-- register the Falco module to expose the endpoint
         |> ignore
 
     let wapp = bldr.Build()
 
-    let endpoints =
-        [ get "/" Pages.homepage ]
-
     wapp.UseRouting()
-        .UseFalco(endpoints)
-        .Run(Pages.notFound)
+        .UseFalco()
+        .Run()
 
     0 // Exit code

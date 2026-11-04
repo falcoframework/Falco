@@ -1,5 +1,6 @@
 namespace BasicRestApi
 
+open System
 open System.Data
 open Donald
 // ^-- external package that makes using databases simpler
@@ -7,6 +8,7 @@ open Falco
 open Falco.Routing
 open Microsoft.AspNetCore.Builder
 open Microsoft.Extensions.DependencyInjection
+open Microsoft.Extensions.Options
 open System.Data.SQLite
 // ^-- official SQLite package
 
@@ -26,6 +28,14 @@ type IStore<'TKey, 'TItem> =
     abstract member Create : 'TItem -> Result<unit, Error>
     abstract member Read : 'TKey -> 'TItem option
     abstract member Delete : 'TKey -> Result<unit, Error>
+
+type SqliteConnectionSettings() =
+    member val ConnectionString = "" with get, set
+
+type SqliteConnectionFactory(settings : SqliteConnectionSettings) =
+    interface IDbConnectionFactory with
+        member _.Create() =
+            new SQLiteConnection(settings.ConnectionString) :> IDbConnection
 
 type UserStore(dbConnection : IDbConnectionFactory) =
     let userOfDataReader (rd : IDataReader) =
@@ -82,83 +92,98 @@ type UserStore(dbConnection : IDbConnectionFactory) =
                 Error { Code = "FAILED"; Message = "Could not add user" }
 
 module ErrorResponse =
-    let badRequest error : HttpHandler =
+    let badRequest error =
         Response.withStatusCode 400
         >> Response.ofJson error
 
-    let notFound : HttpHandler =
+    let notFound =
         Response.withStatusCode 404 >>
         Response.ofJson { Code = "404"; Message = "Not Found" }
 
-    let serverException : HttpHandler =
+    let serverException =
         Response.withStatusCode 500 >>
         Response.ofJson { Code = "500"; Message = "Server Error" }
 
-module Route =
-    let userIndex = "/users"
-    let userAdd = "/users"
-    let userView = "/users/{username}"
-    let userRemove = "/users/{username}"
+type UserModule(userStore : IStore<string, User>) =
+    let describe =
+        dict [
+            "GET /users", "Lists all users"
+            "GET /users/{username}", "Get user by username"
+            "POST /users", "Add user (required fields: username)"
+            "DELETE /users/{username}", "Delete user by username"
+        ]
+        |> Response.ofJson
 
-module UserEndpoint =
     let index : HttpHandler = fun ctx ->
-        let userStore = ctx.Plug<IStore<string, User>>()
         let allUsers = userStore.List()
         Response.ofJson allUsers ctx
 
     let add : HttpHandler = fun ctx -> task {
-        let userStore = ctx.Plug<IStore<string, User>>()
         let! userJson = Request.getJson<User> ctx
-        let userAddResponse =
-            match userStore.Create(userJson) with
-            | Ok result -> Response.ofJson result ctx
-            | Error error -> ErrorResponse.badRequest error ctx
-        return! userAddResponse }
+        if String.IsNullOrWhiteSpace(userJson.Username)
+           || String.IsNullOrWhiteSpace(userJson.FullName) then
+            return! ErrorResponse.badRequest
+                { Code = "400"; Message = "Username and Full name are both required" } ctx
+        else
+            let userAddResponse =
+                match userStore.Create userJson with
+                | Ok result -> Response.ofJson result
+                | Error error -> ErrorResponse.badRequest error
 
-    let view : HttpHandler = fun ctx ->
-        let userStore = ctx.Plug<IStore<string, User>>()
-        let route = Request.getRoute ctx
-        let username = route?username.AsString()
-        match userStore.Read(username) with
-        | Some user -> Response.ofJson user ctx
-        | None -> ErrorResponse.notFound ctx
+            return! userAddResponse ctx }
 
-    let remove : HttpHandler = fun ctx ->
-        let userStore = ctx.Plug<IStore<string, User>>()
-        let route = Request.getRoute ctx
-        let username = route?username.AsString()
-        match userStore.Delete(username) with
-        | Ok result -> Response.ofJson result ctx
-        | Error error -> ErrorResponse.badRequest error ctx
+    let view username =
+        let userResponse =
+            match userStore.Read username with
+            | Some user -> Response.ofJson user
+            | None -> ErrorResponse.notFound
+        userResponse
 
-module App =
-    let endpoints =
-        [ get Route.userIndex UserEndpoint.index
-          post Route.userAdd UserEndpoint.add
-          get Route.userView UserEndpoint.view
-          delete Route.userRemove UserEndpoint.remove ]
+    let remove username =
+        let response =
+            match userStore.Delete username with
+            | Ok result -> Response.ofJson result
+            | Error error -> ErrorResponse.badRequest error
+        response
+
+    let mapName (r : RequestData) =
+        r?username.AsString()
+
+    interface IFalcoModule with
+        member _.Endpoints = seq {
+            get "/" describe
+            get "/users" index
+            post "/users" add
+            mapGet "/users/{username}" mapName view
+            mapDelete "/users/{username}" mapName remove
+        }
 
 module Program =
     [<EntryPoint>]
     let main args =
-        let dbConnectionFactory =
-            { new IDbConnectionFactory with
-                member _.Create() = new SQLiteConnection("Data Source=BasicRestApi.sqlite3") }
-
-        let initializeDatabase (dbConnection : IDbConnectionFactory) =
-            use conn = dbConnection.Create()
-            conn
-            |> Db.newCommand "CREATE TABLE IF NOT EXISTS user (username, full_name)"
-            |> Db.exec
-
-        initializeDatabase dbConnectionFactory
-
-        let bldr = WebApplication.CreateBuilder(args)
+        let bldr = WebApplication.CreateBuilder()
 
         bldr.Services
-            .AddAntiforgery()
-            .AddSingleton<IDbConnectionFactory>(dbConnectionFactory)
-            .AddScoped<IStore<string, User>, UserStore>()
+            .Configure<SqliteConnectionSettings>(bldr.Configuration.GetSection "Sqlite")
+            .AddSingleton<SqliteConnectionSettings>(fun ctx ->
+                ctx.GetRequiredService<IOptions<SqliteConnectionSettings>>().Value)
+            // ^-- extract the SQLite settings from the configuration
+            //     and register in the container
+            .AddSingleton<IDbConnectionFactory>(fun ctx ->
+                let dbSettings = ctx.GetRequiredService<SqliteConnectionSettings>()
+                let db = new SqliteConnectionFactory(dbSettings) :> IDbConnectionFactory
+                // setup our db during connection factory initialization
+                use conn = db.Create()
+                conn
+                |> Db.newCommand "CREATE TABLE IF NOT EXISTS user (username, full_name)"
+                |> Db.exec
+                db)
+            // ^-- register the SQLite IDbConnectionFactory implementation
+            //     and initialize the database
+            .AddSingleton<IStore<string, User>, UserStore>()
+            // ^-- register the User store
+            .AddSingleton<IFalcoModule, UserModule>()
+            // ^-- register the Falco module to expose the endpoints
             |> ignore
 
         let wapp = bldr.Build()
@@ -166,9 +191,9 @@ module Program =
         let isDevelopment = wapp.Environment.EnvironmentName = "Development"
 
         wapp.UseIf(isDevelopment, DeveloperExceptionPageExtensions.UseDeveloperExceptionPage)
-            .UseIf(not(isDevelopment), FalcoExtensions.UseFalcoExceptionHandler ErrorResponse.serverException)
+            .UseIf(not isDevelopment, FalcoExtensions.UseFalcoExceptionHandler ErrorResponse.serverException)
             .UseRouting()
-            .UseFalco(App.endpoints)
+            .UseFalco()
             .Run(ErrorResponse.notFound)
 
         0

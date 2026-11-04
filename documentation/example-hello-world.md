@@ -1,6 +1,6 @@
 # Example - Hello World
 
-The goal of this program is to demonstrate the absolute bare bones hello world application, so that we can focus on the key elements when initiating a new web application.
+The goal of this guide is to demonstrate the absolute bare bones hello world application. This way we can focus on the key elements of initiating a new web application.
 
 The code for this example can be found [here](https://github.com/FalcoFramework/Falco/tree/master/examples/HelloWorld).
 
@@ -22,12 +22,12 @@ let wapp = WebApplication.Create()
 
 wapp.UseRouting()
     .UseFalco([
-    // ^-- activate Falco endpoint source
+    // ^-- activate Falco
         get "/" (Response.ofPlainText "Hello World!")
         // ^-- associate GET / to plain text HttpHandler
     ])
     .Run(Response.ofPlainText "Not found")
-    // ^-- activate Falco endpoint source
+    // ^-- run app and register terminal HttpHandler
 ```
 
 First, we open the required namespaces. `Falco` bring into scope the ability to activate the library and some other extension methods to make the fluent API more user-friendly.

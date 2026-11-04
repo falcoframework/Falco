@@ -1,6 +1,6 @@
 # Example - External View Engine
 
-Falco comes packaged with a [built-in view engine](markup.md). But if you'd prefer to write your own templates, or use an external template engine, that is entirely possible as well.
+Falco comes packaged with a [built-in view engine](markup.md). But if you'd prefer to write your own templates, or use an external view engine, that is entirely possible as well.
 
 In this example we'll do some basic page rendering by integrating with [scriban](https://github.com/scriban/scriban). An amazing template engine by [xoofx](https://github.com/xoofx).
 
@@ -14,109 +14,92 @@ The code for this example can be found [here](https://github.com/FalcoFramework/
 > dotnet add package Scriban
 ```
 
-## Implementing a Template Engine
+## Implementing a View Engine
 
-There are a number of ways we could achieve this functionality. But in sticking with our previous examples, we'll create an interface. To keep things simple we'll use inline string literals for templates and perform rendering synchronously.
+There are a number of ways we could abstract this functionality. But in sticking with our previous examples, we'll create an interface. To keep things simple we'll use inline string literals for templates and perform rendering synchronously.
 
 ```fsharp
-open Scriban
+type IViewEngine =
+    abstract member Render : title: string * model: obj * template: string -> string
 
-type ITemplate =
-    abstract member Render : template: string * model: obj -> string
+type PageViewEngine() =
+    let htmlTemplate = Template.Parse """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>{{ title }}</title>
+        </head>
+        <body>
+            {{ content }}
+        </body>
+        </html>
+        """
+        // ^-- parse the HTML template once during construction
 
-type ScribanTemplate() =
-    interface ITemplate with
-        member _.Render(template, model) =
-            let tmpl = Template.Parse template
-            tmpl.Render(model)
+    interface IViewEngine with
+        member _.Render(title, model, template) =
+            let viewTemplate = Template.Parse template
+            let content = viewTemplate.Render(model)
+            htmlTemplate.Render({| Title = title; Content = content |})
 ```
 
-We define an interface `ITemplate` which describes template rendering as a function that receives a template string literal and a model, producing a string literal. Then we implement this interface definition using Scriban.
+We define an interface `IViewEngine` which describes template rendering as a function that receives a title, a template string literal and a model. The template and model are used to produce the page content at runtime. We define a field to contain our template to serve as our layout. Assigning two simple inputs, `{{title}}` and `{{content}}`. Then we render the layout template using an anonymous object literal containing the page content we rendered earlier, `{| Title = pageTitle; Content = pageContent |}`
 
 ## Rendering Pages
 
-To use our Scriban template engine we'll need to request it from the dependency container, then pass it our template literal and model.
+To use our [scriban](https://github.com/scriban/scriban) view engine we'll need to request it from the dependency container, then pass it our template literal and model. We'll do this in our PageModule which defines our `homepage` endpoint and associates it to the URL "/".
 
 > See [dependency injection](example-dependency-injection.md) for further explanation.
 
-Since rendering more than one page is the goal, we'll create a shared `renderPage` function to do the dirty work for us.
-
 ```fsharp
-open Falco
-
-module Pages =
-    let private renderPage pageTitle template viewModel : HttpHandler = fun ctx ->
-        let templateService = ctx.Plug<ITemplate>() // <-- obtain our template service from the dependency container
-        let pageContent = templateService.Render(template, viewModel) // <-- render our template with the provided view model as string literal
-        let htmlTemplate = """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="utf-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <title>{{title}}</title>
-            </head>
-            <body>
-                {{content}}
-            </body>
-            </html>
-        """
-        // ^ these triple quoted strings auto-escape characters like double quotes for us
-        //   very practical for things like HTML
-
-        let html = templateService.Render(htmlTemplate, {| Title = pageTitle; Content = pageContent |})
-
-        Response.ofHtmlString html ctx // <-- return template literal as "text/html; charset=utf-8" response
-```
-
-In this function we obtain the instance of our template engine, and immediately render the user-provided template and model. Next, we define a local template literal to serve as our layout. Assigning two simple inputs, `{{title}}` and `{{content}}`. Then we render the layout template using our template engine and an anonymous object literal `{| Title = pageTitle; Content = pageContent |}`, responding with the result of this as `text/html`.
-
-To render pages, we simply need to create a localized template literal, and feed it into our `renderPage` function. Below we define a home and 404 page.
-
-```fsharp
-    let homepage : HttpHandler = fun ctx ->
-        let query = Request.getQuery ctx // <-- obtain access to strongly-typed representation of the query string
-        let viewModel = {| Name = query?name.AsStringNonEmpty("World") |} // <-- access 'name' from query, or default to 'World'
-        let template = """
+type PageModule(viewEngine : IViewEngine) =
+    let homepage model =
+        viewEngine.Render($"Hello {model.Name}", model, """
             <h1>Hello {{ name }}!</h1>
-        """
-        renderPage $"Hello {viewModel.Name}" template viewModel ctx
+            <form>
+                <input name="name" placeholder="enter your name">
+                <input type="submit">
+            </form>
+        """)
+        // ^-- these triple quoted strings auto-escape characters like double quotes
+        //     for us very practical for things like HTML
+        |> Response.ofHtmlString
 
-    let notFound : HttpHandler =
-        let template = """
-            <h1>Page not found</h1>
-        """
-        renderPage "Page Not Found" template {||}
+    let mapName (r : RequestData) =
+        { Name = r?name.AsStringNonEmpty "World" }
+
+    interface IFalcoModule with
+        member _.Endpoints = seq {
+            mapGet "/" mapName homepage
+        }
 ```
 
-## Registering the Template Engine
+In this function we obtain the instance of our view engine, and immediately render the user-provided template and model to string, responding with the result of this as `text/html`.
 
-Since our Scriban template engine is stateless and dependency-free, we can use the generic extension method to register it as a singleton.
+## Registering the View Engine
+
+Since our [scriban](https://github.com/scriban/scriban) view engine is stateless and dependency-free, we can use the generic extension method to register it as a singleton.
 
 > Note: `Transient` and `Scoped` lifetimes would also work here.
 
 ```
-open Falco
-open Falco.Routing
-open Microsoft.AspNetCore.Builder
-open Microsoft.Extensions.DependencyInjection
-
 [<EntryPoint>]
 let main args =
     let bldr = WebApplication.CreateBuilder(args)
 
     bldr.Services
-        .AddSingleton<ITemplate, ScribanTemplate>() // <-- register ITemplates implementation as a dependency
+        .AddSingleton<IViewEngine, PageViewEngine>()
+        // ^-- register Scriban implementation as a dependency
+        .AddSingleton<IFalcoModule, PageModule>()
+        // ^-- register the Falco module to expose the endpoint
         |> ignore
-
-    let endpoints =
-        [ get "/" Pages.homepage ]
 
     let wapp = bldr.Build()
 
     wapp.UseRouting()
-        .UseFalco(endpoints)
-        .UseFalcoNotFound(Pages.notFound)
+        .UseFalco()
         .Run()
 
     0 // Exit code
@@ -124,6 +107,6 @@ let main args =
 
 ## Wrapping Up
 
-This example demonstrates how to effectively integrate an external view engine into your Falco application. By defining a simple interface, implementing it with Scriban and adding it to the dependency container, we can render HTML pages dynamically based on user input.
+This example demonstrates how to effectively integrate an external view engine into your Falco application. By defining a simple interface, implementing it with [scriban](https://github.com/scriban/scriban) and adding it to the dependency container, we can render HTML pages dynamically based on user input.
 
 [Next: Example - Basic REST API](example-basic-rest-api.md)
