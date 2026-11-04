@@ -53,12 +53,20 @@ module Extensions =
         member this.Use(fn : IApplicationBuilder -> IApplicationBuilder) : IApplicationBuilder =
             this.UseIf(true, fn)
 
-        /// Activates Falco integration with IEndpointRouteBuilder.
+        /// Activates Falco integration with IEndpointRouteBuilder. Scans for
+        /// `IFalcoModule` implementations an appends collected endpoints to
+        /// `endpoints` argument.
         ///
         /// This is the default way to enable the library.
         member this.UseFalco(endpoints : HttpEndpoint seq) : IApplicationBuilder =
             this.UseEndpoints(fun endpointBuilder ->
-                endpointBuilder.UseFalcoEndpoints(endpoints) |> ignore)
+                endpointBuilder.ServiceProvider.GetServices<IFalcoModule>()
+                |> Seq.collect _.Endpoints
+                |> fun moduleEndpoints -> Seq.concat [ endpoints; moduleEndpoints ]
+                |> endpointBuilder.UseFalcoEndpoints |> ignore)
+
+        member this.UseFalco() =
+            this.UseFalco([])
 
         /// Registers a `Falco.HttpHandler` as terminal middleware (i.e., not found).
         /// This should be registered at the end of the middleware pipeline to catch any
@@ -104,6 +112,9 @@ module Extensions =
         member this.UseFalco(endpoints : HttpEndpoint seq) : WebApplication =
             (this :> IApplicationBuilder).UseFalco(endpoints) |> ignore
             this
+
+        member this.UseFalco() =
+            this.UseFalco([])
 
         /// Registers a `Falco.HttpHandler` as exception handler lambda.
         /// See: https://docs.microsoft.com/en-us/aspnet/core/fundamentals/error-handling?#exception-handler-lambda

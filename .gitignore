@@ -12,6 +12,7 @@
 [Ee]xamples/[Ss]andbox/
 [Ss]andbox/
 *.sqlite
+*.sqlite3
 [Mm]emory
 
 # User-specific files (MonoDevelop/Xamarin Studio)

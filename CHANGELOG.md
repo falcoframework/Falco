@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- `IFalcoModule` interface for defining modular route handlers in the application.
+- `Routing.mapAll` which produces `HttpEndpoint` by associating a route pattern to `HttpVerb * HttpHandler` pairs.
 - `Request.getBodyStringOptions` to allow configuration of the maximum request body size, with a default of `Multipart.DefaultMaxSize` (32MB).
 - `Request.getFormOptions` to allow configuration of the maximum form size, with a default of `Multipart.DefaultMaxSize` (32MB).
 - Guards to `RequestValue.parse` to prevent oversized numerics or leading-zero numeric strings (non-decimal) from being parsed as floats.

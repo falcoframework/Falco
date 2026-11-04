@@ -1,4 +1,4 @@
-﻿namespace Falco
+namespace Falco
 
 open System
 open System.Collections.Generic
@@ -14,6 +14,10 @@ type HttpEndpoint =
     { Pattern  : string
       Handlers : (HttpVerb * HttpHandler) seq
       Configure : EndpointBuilder -> EndpointBuilder }
+
+/// Represents a module that can provide a collection of HTTP endpoints.
+type IFalcoModule =
+    abstract member Endpoints : HttpEndpoint seq
 
 module Routing =
     /// Constructor for multi-method HttpEndpoint.
@@ -99,6 +103,17 @@ module Routing =
     /// - `handler` - The HttpHandler to be associated with the TRACE HttpVerb and provided route pattern.
     let trace pattern handler =
         route TRACE pattern handler
+
+    /// Map all HttpEndpoint constructor which maps the route using the provided
+    /// `map` function for multiple HTTP methods.
+    ///
+    /// - `pattern` - The route pattern to which the HttpHandlers will be associated.
+    /// - `map` - A function that takes the route pattern and returns a mapped value which will be included in the HttpContext for the HttpHandlers to use.
+    /// - `handlers` - A sequence of tuples containing the HttpVerb and the corresponding HttpHandler to be associated with the provided route pattern.
+    let mapAll pattern map handlers =
+        all pattern [
+            for method, handler in handlers do
+                method, Request.mapRoute map handler ]
 
     /// HttpEndpoint constructor that matches any HttpVerb which maps the route
     /// using the provided `map` function.
