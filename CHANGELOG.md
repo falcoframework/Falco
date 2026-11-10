@@ -75,16 +75,16 @@ All notable changes to this project will be documented in this file.
 - Declarative OpenAPI support.
 - `RequestData` (and `RequestValue`) to support complex form & query submissions,
   - Provided by an HTTP key/value pair (i.e., `name=falco&classification=toolkit`) parser.
-  - A derivative `FormData` contains parsed `RequestValue` and access to `IFormFileCollection`.
+  - A derivative, `FormData`, contains parsed `RequestValue` and access to `IFormFileCollection`.
 - `HttpContext.Plug<T>` for generic injection support of dependencies within `HttpHandler`'s (service locator pattern).
 - `Request.getJson<T>` for generic JSON request deserialization, using default settings (property name case-insensitive, trailing commas allowed).
 - `Request.getCookies`, replacing `Request.getCookie`.
-- `Response.signInOptions` to sign in claim principal for provided scheme and options then responds with a 301 redirect to provided URL.
+- `Response.signInOptions` to sign in the claim principal for the provided scheme and options, then respond with a 301 redirect to the provided URL.
 - `Response.challengeAndRedirect`, replacing `Response.challengeWithRedirect`.
 - `Routing.map[Get|Head|Post|Put|Patch|Delete|Options|Trace|Any]` which produces `HttpEndpoint` by associating a route pattern to an `HttpHandler` after mapping route.
 - `Routing.setDisplayName` to set the display name of the endpoint.
 - `Routing.setOrder` to set the order number of the endpoint.
-- `WebApplication.run`, registers the provided `HttpHandler` as the terminal middleware and runs the application.
+- `WebApplication.run`, which registers the provided `HttpHandler` as the terminal middleware and runs the application.
 
 ### Changed
 
@@ -94,7 +94,7 @@ All notable changes to this project will be documented in this file.
 
 - Missing cancellation token pass-through during form reading, `multipart/form-data` streaming and JSON serialization/deserialization.
 - Empty request body support for JSON request methods.
-- `WebApplication.UseFalcoNotFound` & `IApplicationBuilder.UseFalcoNotFound` to correctly terminate by returning `unit` akin to the native method.
+- `WebApplication.UseFalcoNotFound` & `IApplicationBuilder.UseFalcoNotFound` to correctly terminate by returning `unit`, as in the native method.
 
 ### Removed
 
@@ -106,7 +106,7 @@ All notable changes to this project will be documented in this file.
 - `Services.inject<T>` (and overloads) removed.
 - `Response.withContentLength` removed (unsupported).
 - `StringCollectionReader` and derivatives removed (`FormCollectionReader`, `QueryCollectionReader`, `RouteCollectionReader`, `HeaderCollectionReader`, and `CookieCollectionReader`).
-    - All replaced by homogenous `RequestData` type.
+    - All replaced by homogeneous `RequestData` type.
 - `Request.streamForm`, `Request.streamFormSecure`, `Request.mapFormStream` and `Request.mapFormStreamSecure` removed.
 - `Falco.Security.Crypto` and `Falco.Security.Auth` modules removed.
 - Removed `Request.getCookie`, renamed `Request.getCookies`.
@@ -185,11 +185,11 @@ The project no longer intends to support anything prior to net6.0, which enables
 
 - `StringCollectionReader` abstract attribute removed, to support nested readers.
 - `StringCollectionReader.Get{String|StringNonEmpty|Int16|Int32|Int|Int64|Boolean|Float|Decimal|DateTime|DateTimeOffset|Guid|TimeSpan}` default value made optional.
-- Upgraded host builder expression from `IWebHostBuilde` to `WebApplication`.
+- Upgraded host builder expression from `IWebHostBuilder` to `WebApplication`.
 
 ### Removed
 
-- `Falco.Markup`, module has been extracted into it's own [project](https://github.com/FalcoFramework/Falco.Markup).
+- `Falco.Markup`, module has been extracted into its own [project](https://github.com/FalcoFramework/Falco.Markup).
 - Additional `StringCollectionReader` constructors, per-collection type.
 - `StringCollectionReader.TryArrayString`, use `StringCollectionReader.GetStringArray`
 - `StringCollectionReader.TryArrayInt16`, use `StringCollectionReader.GetInt16Array`
@@ -283,7 +283,7 @@ The project no longer intends to support anything prior to net6.0, which enables
 
 ### Changed
 
-- Embedded PDBs to faciliate sourcelink.
+- Embedded PDBs to facilitate SourceLink.
 
 ## [3.1.7] - 9/24/2021
 
@@ -447,7 +447,7 @@ The project no longer intends to support anything prior to net6.0, which enables
 
 ### Added
 
-- Dependency on [Taskbuilder.fs](https://github.com/rspeele/Taskbuilder.fs), with internal extesion for `Task<unit> -> Task` conversion.
+- Dependency on [Taskbuilder.fs](https://github.com/rspeele/Taskbuilder.fs), with an internal extension for `Task<unit> -> Task` conversion.
 
 ## [2.0.2] - 7/31/2020
 
@@ -461,7 +461,7 @@ The project no longer intends to support anything prior to net6.0, which enables
 
 ### Changed
 
-- Parameter ordering for `Response.withCookieOptions`, `Response.ofJsonOptions` to ensure configuration uniformly occured first.
+- Parameter ordering for `Response.withCookieOptions`, `Response.ofJsonOptions` to ensure configuration uniformly occurred first.
 
 ## [2.0.0] - 7/12/2020
 

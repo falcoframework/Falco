@@ -1,6 +1,6 @@
 # Example - Dependency Injection
 
-An important and nuanced subject to discuss is dependency injection. There's a myriad of beliefs and approaches, all of which have their merit. In the case of Falco, you are living in the world of ASP.NET which has [built-in support](https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection) for this. It works very well and you should use it. But make sure you follow through their [docs](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection) on how it works and integrates with ASP.NET.
+An important and nuanced subject to discuss is dependency injection. There is a myriad of beliefs and approaches, all of which have their merit. In the case of Falco, you are living in the world of ASP.NET, which has [built-in support](https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection) for this. It works very well and you should use it. But make sure you follow their [docs](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection) on how it works and integrates with ASP.NET.
 
 Going back to our basic [Hello World](example-hello-world.md) app, let's add in a dependency to demonstrate some of the basics of dependency injection in Falco.
 
@@ -30,11 +30,11 @@ type FriendlyGreeter() =
             $"Hello {name} 😀"
 ```
 
-Simple enough, we describe an `IGreeter` as having the ability to `Greet` in the form of receiving a name string and return a string message. Then we define an implementation that fulfills this interface in a friendly way.
+Simple enough, we describe an `IGreeter` as having the ability to `Greet` in the form of receiving a name string and returning a string message. Then we define an implementation that fulfills this interface in a friendly way.
 
 ## Falco Modules
 
-Falco version 6 introduced the `IFalcoModule`, when implemented provides endpoint discovery for modules registered in the dependency injection container. That being the case, this is a perfect instance to demonstrate the value of `IFalcoModule`. For our example, we'll define a `GreetingModule` with a single endpoint, we do this using another class.
+Falco version 6 introduced the `IFalcoModule`, which, when implemented, provides endpoint discovery for modules registered in the dependency injection container. That being the case, this is a perfect instance to demonstrate the value of `IFalcoModule`. For our example, we'll define a `GreetingModule` with a single endpoint, which we'll do using another class.
 
 ```fsharp
 type GreetingModule(greeter : IGreeter) =

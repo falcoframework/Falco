@@ -10,7 +10,7 @@ module Extensions =
     open Microsoft.Extensions.Logging
 
     type IEndpointRouteBuilder with
-        /// Registers a sequence of `Falco.HttpEndpoint` with the endpoint route builder.
+        /// Registers a sequence of `Falco.HttpEndpoint` instances with the endpoint route builder.
         member this.UseFalcoEndpoints(endpoints : HttpEndpoint seq) : IEndpointRouteBuilder =
             let falcoDataSource =
                 let registeredDataSource = this.ServiceProvider.GetService<FalcoEndpointDataSource>()
@@ -49,13 +49,13 @@ module Extensions =
             if predicate then fn this |> ignore
             this
 
-        /// Analagous to `IApplicationBuilder.Use` but returns `WebApplication`.
+        /// Analogous to `IApplicationBuilder.Use` but returns `WebApplication`.
         member this.Use(fn : IApplicationBuilder -> IApplicationBuilder) : IApplicationBuilder =
             this.UseIf(true, fn)
 
         /// Activates Falco integration with IEndpointRouteBuilder. Scans for
-        /// `IFalcoModule` implementations an appends collected endpoints to
-        /// `endpoints` argument.
+        /// `IFalcoModule` implementations and appends collected endpoints to
+        /// the `endpoints` argument.
         ///
         /// This is the default way to enable the library.
         member this.UseFalco(endpoints : HttpEndpoint seq) : IApplicationBuilder =
@@ -98,7 +98,7 @@ module Extensions =
             (this :> IApplicationBuilder).UseIf(predicate, fn) |> ignore
             this
 
-        /// Analagous to `IApplicationBuilder.Use` but returns `WebApplication`.
+        /// Analogous to `IApplicationBuilder.Use` but returns `WebApplication`.
         member this.Use(fn : IApplicationBuilder -> IApplicationBuilder) : WebApplication =
             this.UseIf(true, fn)
 
@@ -135,7 +135,7 @@ module Extensions =
             app.UseFalcoExceptionHandler exceptionHandler
 
     type HttpContext with
-        /// Attempts to obtain dependency from IServiceCollection
-        /// Throws InvalidDependencyException on missing.
+        /// Attempts to obtain a dependency from IServiceCollection.
+        /// Throws InvalidDependencyException if the dependency is missing.
         member this.Plug<'T>() =
             this.RequestServices.GetRequiredService<'T>()

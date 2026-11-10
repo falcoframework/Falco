@@ -77,7 +77,7 @@ type IStore<'TKey, 'TItem> =
     abstract member Read : 'TKey -> 'TItem option
     abstract member Delete : 'TKey -> Result<unit, Error>
 ```
-The `IStore` interface is generic, allowing us to use it with any type of entity. In our case, we'll create a concrete implementation for the `User` entity with `string` as the key type. Our implementation will depend on `IDbConnectionFactory` for creating new database connections. Each method will create it's own `IDbConnection` using the provided `IDbConnectionFactory`.
+The `IStore` interface is generic, allowing us to use it with any type of entity. In our case, we'll create a concrete implementation for the `User` entity with `string` as the key type. Our implementation will depend on `IDbConnectionFactory` for creating new database connections. Each method will create its own `IDbConnection` using the provided `IDbConnectionFactory`.
 
 Let's define the `List()` method first, which performs a basic `SELECT` statement, queries for the results and maps them using a locally defined function.
 
@@ -124,7 +124,7 @@ type UserStore(dbConnection : IDbConnectionFactory) =
                 Error { Code = "FAILED"; Message = "Could not add user" }
 ```
 
-We won't go over the remaining implementation here, but you review the full source code [here](https://github.com/FalcoFramework/Falco/tree/master/examples/BasicRestApi)
+We won't go over the remaining implementation here, but you can review the full source code [here](https://github.com/FalcoFramework/Falco/tree/master/examples/BasicRestApi).
 
 ## Error Responses
 
@@ -145,11 +145,11 @@ module ErrorResponse =
         Response.ofJson { Code = "500"; Message = "Server Error" }
 ```
 
-Here you can see our error type in action, which is used to return a JSON response with the error code and message. The signature of the `badRequest` function is a bit different, as it takes an error object as input and returns a `HttpHandler`. The reason for this is that we intend to invoke this function from within our handlers, and we want to be able to pass the error object directly to it.
+Here you can see our error type in action, which is used to return a JSON response with the error code and message. The signature of the `badRequest` function is a bit different, as it takes an error object as input and returns an `HttpHandler`. The reason for this is that we intend to invoke this function from within our handlers, and we want to be able to pass the error object directly to it.
 
 ## Defining the Endpoints
 
-In Falco version 6, the `IFalcoModule` was introduced. It helps organize endpoints and facilitates dependency injection through constructor arguments. Using the `IFalcoModule` is entirely optional, but does have the added advantage of resolving all dependencies at startup instead of runtime (when using `ctx.Plug<T>()`)
+In Falco version 6, the `IFalcoModule` was introduced. It helps organize endpoints and facilitates dependency injection through constructor arguments. Using the `IFalcoModule` is entirely optional, but does have the added advantage of resolving all dependencies at startup instead of runtime (when using `ctx.Plug<T>()`).
 
 ```fsharp
 type UserModule(userStore : IStore<string, User>) =

@@ -8,9 +8,9 @@ This means that you can deploy your Falco application as a self-contained execut
 
 ## Self-contained deployments
 
-It is highly recommended to deploy your Falco application as a self-contained executable. This means that the .NET runtime and all dependencies are included in the deployment package, so you don't have to worry about the target environment having the correct version of .NET installed. This will result in a slightly larger deployment package, but it will ensure that your application runs correctly in any environment. The larger binary size can also be offset by using trim.
+It is highly recommended to deploy your Falco application as a self-contained executable. This means that the .NET runtime and all dependencies are included in the deployment package, so you don't have to worry about the target environment having the correct version of .NET installed. This will result in a slightly larger deployment package, but it will ensure that your application runs correctly in any environment. The larger binary size can also be offset by using trimming.
 
-Below is an example [Directory.Build.props] that will help enable the non-AOT features. These properties can also be added to you fsproj file.
+Below is an example [Directory.Build.props] that will help enable the non-AOT features. These properties can also be added to your fsproj file.
 
 ```xml
 <Project>
@@ -31,7 +31,7 @@ Below is an example [Directory.Build.props] that will help enable the non-AOT fe
 
 Publishing your app as Native AOT produces an app that's self-contained and that has been ahead-of-time (AOT) compiled to native code. Native AOT apps have faster startup time and smaller memory footprints. These apps can run on machines that don't have the .NET runtime installed.
 
-Since AOT deployments require trimming, and are single file by nature the only required msbuild property is:
+Since AOT deployments require trimming and are single-file by nature, the only required msbuild property is:
 
 ```xml
 <Project>

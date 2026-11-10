@@ -2,6 +2,7 @@
 
 [![NuGet Version](https://img.shields.io/nuget/v/Falco.svg)](https://www.nuget.org/packages/Falco)
 [![build](https://github.com/FalcoFramework/Falco/actions/workflows/build.yml/badge.svg)](https://github.com/FalcoFramework/Falco/actions/workflows/build.yml)
+[![Sourcegraph](https://sourcegraph.com/github.com/falcoframework/falco/-/badge.svg)](https://sourcegraph.com/github.com/falcoframework/falco?badge)
 
 ```fsharp
 open Falco
@@ -27,31 +28,29 @@ wapp.Run(Response.ofPlainText "Hello world")
 - [Authentication](documentation/authentication.md) and [security](documentation/cross-site-request-forgery.md) utilities.
 - Built-in support for [large uploads](documentation/request.md#multipartform-data-binding) and [binary responses](documentation/response.md#content-disposition).
 
-
 ## Design Goals
 
-- Provide a toolset to build full-stack web application in F#.
+- Provide a toolset to build full-stack web applications in F#.
 - Should be simple, extensible and integrate with existing .NET libraries.
 - Can be easily learned.
 
 ## Learn
 
-The best way to get started is by visiting the [documentation](https://falcoframework.com/docs). For questions and support please use [discussions](https://github.com/FalcoFramework/Falco/discussions). For chronological updates refer to the [changelog](CHANGELOG.md) is the best place to find chronological updates.
+The best way to get started is by visiting the [documentation](https://falcoframework.com/docs). For questions and support, please use [discussions](https://github.com/FalcoFramework/Falco/discussions). For chronological updates, refer to the [changelog](CHANGELOG.md).
 
 ### Related Libraries
 
-- [Falco.Markup](https://github.com/FalcoFramework/Falco.Markup) - an XML markup module primary used as the syntax for [authoring HTML with Falco](https://www.falcoframework.com/docs/markup.html).
-- [Falco.Htmx](https://github.com/dpraimeyuu/Falco.Htmx) - a full featured integration with [htmx JS package](https://htmx.org/).
+- [Falco.Markup](https://github.com/FalcoFramework/Falco.Markup) - an XML markup module primarily used as the syntax for [authoring HTML with Falco](https://www.falcoframework.com/docs/markup.html).
+- [Falco.Htmx](https://github.com/dpraimeyuu/Falco.Htmx) - a full-featured integration with the [htmx JS package](https://htmx.org/).
 - [Falco.OpenApi](https://github.com/FalcoFramework/Falco.OpenApi) - a library for generating OpenAPI documentation from Falco applications.
 - [Falco.Template](https://github.com/FalcoFramework/Falco.Template) - a .NET SDK [project template](https://learn.microsoft.com/en-us/dotnet/core/tools/custom-templates) to help get started with Falco quickly.
-- [Falco.UnionRoutes](https://github.com/michaelglass/Falco.UnionRoutes/) - a library for expressing routes as a descriminated union, inspired by Haskell's [Servant](https://docs.servant.dev/).
-- [CloudSeed](https://cloudseed.xyz/) - a simple, scalable project boilerplate for F# / .NET.
+- [Falco.UnionRoutes](https://github.com/michaelglass/Falco.UnionRoutes/) - a library for expressing routes as a discriminated union, inspired by Haskell's [Servant](https://docs.servant.dev/).
 
 ### Community Projects
 
 - [Falco GraphQL Sample](https://github.com/adelarsq/falco_graphql_sample) - A sample showing how to use GraphQL on Falco using .NET 6.
 - [Falco API with Tests Sample](https://github.com/jasiozet/falco-api-with-tests-template) - A sample project using Falco and unit testing.
-- [Falco + SQLite + Donald](https://github.com/galassie/FalcoSample) - A demo project using Falco, [Donald](https://github.com/pimbrouwers/Donald), and SQLite
+- [Falco + SQLite + Donald](https://github.com/galassie/FalcoSample) - A demo project using Falco, [Donald](https://github.com/pimbrouwers/Donald), and SQLite.
 - [FShopOnWeb](https://github.com/NitroDevs/FShopOnWeb) - An adaptation of the classic [ASP.NET Core sample application](https://github.com/dotnet-architecture/eShopOnWeb) using Falco and an F# architecture.
 
 ### Articles
@@ -71,11 +70,9 @@ The best way to get started is by visiting the [documentation](https://falcofram
 
 Before submitting a pull request, submit an [issue](https://github.com/FalcoFramework/Falco/issues) or open a [discussion](https://github.com/FalcoFramework/Falco/discussions).
 
-If functionality is added to the API, or changed, please kindly update any relevant documents. Unit tests must also be added and/or updated before a pull request can be successfully merged.
+If functionality is added to or changed in the API, please kindly update any relevant documents. Unit tests must also be added and/or updated before a pull request can be successfully merged.
 
 Only pull requests which pass all build checks and comply with the project's coding standard can be approved.
-
-If you have any further questions, submit an [issue](https://github.com/FalcoFramework/Falco/issues) or open a [discussion](https://github.com/FalcoFramework/Falco/discussions).
 
 ## Why "Falco"?
 

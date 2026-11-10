@@ -2,7 +2,7 @@
 
 As your app becomes more complex, you'll inevitably need to reach for some additional host configuration. This is where the `Microsoft.AspNetCore.Builder` import comes in. This assembly contains many useful extensions for configuring the server (ex: static files, authentication, authorization etc.).
 
-Most of the extension methods have existed since the early days of ASP.NET Core and operate against `IApplicationBuilder`. But more recent version of ASP.NET Core have introduced a new `WebApplication` type that implements `IApplicationBuilder` and provides some additional functionality,  notably endpoint configuration. This dichotomy makes pipelining next to impossible. In C# you don't feel the sting of this as much because of `void` returns. But in F# this results in an excess amount of `|> ignore` calls.
+Most of the extension methods have existed since the early days of ASP.NET Core and operate against `IApplicationBuilder`. But more recent versions of ASP.NET Core have introduced a new `WebApplication` type that implements `IApplicationBuilder` and provides some additional functionality, notably endpoint configuration. This dichotomy makes pipelining next to impossible. In C# you don't feel the sting of this as much because of `void` returns. But in F# this results in an excess amount of `|> ignore` calls.
 
 Let's take the hero code from the [Getting Started](get-started.md) page and add the static file middleware to it:
 
@@ -18,12 +18,12 @@ let wapp = WebApplication.Create()
 wapp.UseRouting()
     .UseDefaultFiles() // you might innocently think this is fine
     .UseStaticFiles()  // and so is this
-                       // but uknowingly, the underlying type has changed
+                       // but unknowingly, the underlying type has changed
     .UseFalco([
         get "/" (Response.ofPlainText "Hello World!")
     ])
     .Run(Response.ofPlainText "Not found")
-    // ^-- this is no longer starts up our application
+    // ^-- this no longer starts up our application
 
 // one way to fix this:
 wapp.UseRouting() |> ignore
@@ -37,7 +37,7 @@ wapp.UseFalco([
 // but we can do better
 ```
 
-To salve this, Falco comes with a several shims. The most important of these are `WebApplication.Use` and `WebApplication.UseIf` which allow you to compose a pipeline entirely driven by `WebApplication` while at the same time taking advantage of the existing ASP.NET Core extensions.
+To solve this, Falco comes with several shims. The most important of these are `WebApplication.Use` and `WebApplication.UseIf` which allow you to compose a pipeline entirely driven by `WebApplication` while at the same time taking advantage of the existing ASP.NET Core extensions.
 
 ```fsharp
 wapp.UseRouting()
@@ -50,7 +50,7 @@ wapp.UseRouting()
     .Run(Response.ofPlainText "Not found")
 ```
 
-The optional, but recommended way to take advantage of these is to utilize the static methods that server as the underpinning to the various extension methods available. The code below will attempt to highlight this more clearly:
+The optional, but recommended way to take advantage of these is to utilize the static methods that serve as the underpinning to the various extension methods available. The code below will attempt to highlight this more clearly:
 
 ```fsharp
 // better yet

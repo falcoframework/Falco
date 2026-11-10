@@ -12,10 +12,10 @@ module HttpHandler =
     let toRequestDelegate (handler : HttpHandler) =
         new RequestDelegate(handler)
 
-/// In-and-out processing of a HttpContext.
+/// In-and-out processing of an HttpContext.
 type HttpResponseModifier = HttpContext -> HttpContext
 
-/// Http verb
+/// HTTP verb.
 type HttpVerb =
     | GET
     | HEAD

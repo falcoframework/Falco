@@ -5,30 +5,30 @@ open System.Collections.Generic
 open System.Globalization
 
 module internal StringUtils =
-    /// Checks if string is null or whitespace.
+    /// Checks if the string is null or whitespace.
     let strEmpty str =
         String.IsNullOrWhiteSpace(str)
 
-    /// Checks if string is not null or whitespace.
+    /// Checks if the string is not null or whitespace.
     let strNotEmpty str =
         not(strEmpty str)
 
-    /// Case & culture insensitive string equality.
+    /// Case- and culture-insensitive string equality.
     let strEquals s1 s2 =
         String.Equals(s1, s2, StringComparison.InvariantCultureIgnoreCase)
 
-    /// Concats strings.
+    /// Concatenates strings.
     let strConcat (lst : string seq) =
         // String.Concat uses a StringBuilder when provided an IEnumerable
         // Url: https://github.com/microsoft/referencesource/blob/master/mscorlib/system/string.cs#L161
         String.Concat(lst)
 
-    /// Splits string into substrings based on separator.
+    /// Splits a string into substrings based on a separator.
     let strSplit (sep : char array) (str : string) =
         str.Split(sep, StringSplitOptions.RemoveEmptyEntries)
 
 module internal StringParser =
-    /// Helper to wrap .NET tryParser's.
+    /// Helper to wrap .NET tryParser functions.
     let private tryParseWith (tryParseFunc: string -> bool * _) (str : string) =
         let parsedResult = tryParseFunc str
         match parsedResult with

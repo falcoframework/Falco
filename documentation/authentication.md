@@ -49,7 +49,7 @@ let secureResourceHandler : HttpHandler =
 ```
 
 
-### Allow only authenticated acces with a certain scope
+### Allow only authenticated access with a certain scope
 
 ```fsharp
 open Falco

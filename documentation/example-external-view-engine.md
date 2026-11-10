@@ -64,7 +64,7 @@ type PageModule(viewEngine : IViewEngine) =
             </form>
         """)
         // ^-- these triple quoted strings auto-escape characters like double quotes
-        //     for us very practical for things like HTML
+        //     which is very practical for things like HTML
         |> Response.ofHtmlString
 
     let mapName (r : RequestData) =

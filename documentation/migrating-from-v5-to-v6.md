@@ -1,6 +1,6 @@
 # Migrating from v5.x to v6.x
 
-The objective of Falco v6.x is to continue to simplify the API and improve the overall development experience long term. The idea being provide only what is necessary, or provides the most value in the most frequently developed areas.
+The objective of Falco v6.x is to continue to simplify the API and improve the overall development experience long term. The idea being to provide only what is necessary, or what provides the most value in the most frequently developed areas.
 
 ## `Request.getFormSecure`
 

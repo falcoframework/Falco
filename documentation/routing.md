@@ -2,7 +2,7 @@
 
 Routing is responsible for matching incoming HTTP requests and dispatching those requests to the app's `HttpHandler`s. The breakdown of [Endpoint Routing](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/routing#configuring-endpoint-metadata) is simple. Associate a specific [route pattern](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/routing#route-template-reference) and an HTTP verb to an [`HttpHandler`](request.md) which represents the ongoing processing (and eventual return) of a request.
 
-Bearing this in mind, routing can practically be represented by a list of these "mappings" known in Falco as an `HttpEndpoint` which bind together: a route, verb and handler.
+Bearing this in mind, routing can practically be represented by a list of these "mappings" known in Falco as an `HttpEndpoint` which bind together a route, verb and handler.
 
 > Note: All of the following examples are _fully functioning_ web apps.
 
@@ -61,7 +61,7 @@ The second segment of the URL path, `{name:alpha}`:
 - Is bound to the `name` parameter.
 - Is captured and stored in `HttpRequest.RouteValues`, which Falco exposes through a [uniform API](request.md) to obtain primitive typed values.
 
-An alternative way to express the `HttEndpoint` above is seen below.
+An alternative way to express the `HttpEndpoint` above is seen below.
 
 ```fsharp
 open Falco
@@ -84,7 +84,7 @@ wapp.UseRouting()
 
 ## Multi-method Endpoints
 
-There are scenarios where you may want to accept multiple HTTP verbs to single a URL. For example, a `GET`/`POST` form submission.
+There are scenarios where you may want to accept multiple HTTP verbs for a single URL. For example, a `GET`/`POST` form submission.
 
 To create a "multi-method" endpoint, the `all` function accepts a list of HTTP Verb and HttpHandler pairs.
 

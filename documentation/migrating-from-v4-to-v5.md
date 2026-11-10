@@ -1,12 +1,12 @@
 # Migrating from v4.x to v5.x
 
-With Falco v5.x the main objective was to simplify the API and improve the overall devlopment experience long term. The idea being provide only what is necessary, or provides the most value in the most frequently developed areas.
+With Falco v5.x the main objective was to simplify the API and improve the overall development experience long term. The idea being to provide only what is necessary, or what provides the most value in the most frequently developed areas.
 
 This document will attempt to cover the anticipated transformations necessary to upgrade from v4.x to v5.x. Pull requests are welcome for missing scenarios, thank you in advance for your help.
 
 ## `webHost` expression
 
-Perhaps the most significant change is the removal of the `webHost` expression, which attempted to make web application server construction more pleasant. Microsoft has made really nice strides in this area (i.e., `WebApplication`) and it's been difficult at times to stay sync with the breaking changes to the underlying interfaces. As such, we elected to remove it altogether.
+Perhaps the most significant change is the removal of the `webHost` expression, which attempted to make web application server construction more pleasant. Microsoft has made really nice strides in this area (i.e., `WebApplication`) and it's been difficult at times to stay in sync with the breaking changes to the underlying interfaces. As such, we elected to remove it altogether.
 
 Below demonstrates how to migrate a "hello world" app from v4 to v5 by replacing the `webHost` expression with the Microsoft provided `WebApplicationBuilder`.
 
@@ -118,7 +118,7 @@ Explicit references to: `CookieCollectionReader`, `HeaderCollectionReader`, `Rou
 
 ## Form Streaming
 
-Falco now automatically detects whether the form is transmiting `multipart/form-data`, which means deprecating the `Request` module streaming functions.
+Falco now automatically detects whether the form is transmitting `multipart/form-data`, which means deprecating the `Request` module streaming functions.
 
 - `Request.streamForm` becomes -> `Request.mapForm`
 - `Request.streamFormSecure` becomes -> `Request.mapFormSecure`
@@ -145,7 +145,7 @@ let myHandler : HttpHandler = fun ctx ->
 
 ## `Xss` module renamed to `Xsrf`
 
-The `Xss` module has been renamed to `Xsrf` to better describe it's intent.
+The `Xss` module has been renamed to `Xsrf` to better describe its intent.
 
 ```fsharp
     //before: Xss.antiforgeryInput

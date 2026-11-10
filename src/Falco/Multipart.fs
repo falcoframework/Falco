@@ -20,7 +20,7 @@ module Multipart =
         | FormFileData of FormFile
 
     type private MultipartSection with
-        /// Attempts to obtain encoding from content type, default to UTF8.
+        /// Attempts to obtain encoding from the content type, defaulting to UTF-8.
         static member private GetEncodingFromContentType(section : MultipartSection) =
             match MediaTypeHeaderValue.TryParse(StringSegment(section.ContentType)) with
             | false, _     -> System.Text.Encoding.UTF8
@@ -32,7 +32,7 @@ module Multipart =
             | false, _     -> None
             | true, parsed -> Some parsed
 
-        /// Stream with size check to avoid unbounded memory growth.
+        /// Streams with a size check to avoid unbounded memory growth.
         /// Streams the current section asynchronously with a specified maximum size.
         ///
         /// - `ct`: A `CancellationToken` to observe while waiting for the task to complete.
@@ -118,7 +118,7 @@ module Multipart =
             }
 
     type HttpRequest with
-        /// Determines if the content type contains multipart.
+        /// Determines if the content type contains multipart data.
         member internal x.IsMultipart () : bool =
             x.ContentType.IndexOf("multipart/", StringComparison.OrdinalIgnoreCase) >= 0
 

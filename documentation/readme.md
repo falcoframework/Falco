@@ -1,6 +1,6 @@
 # Welcome to Falco's Documentation
 
-Visit the [getting started](get-started.md) page for installation and a brief overview. There are also more detailed [examples](example-hello-world.md) that shows how to create a small but complete application with Falco. The rest of the docs describe each component of Falco in detail.
+Visit the [getting started](get-started.md) page for installation and a brief overview. There are also more detailed [examples](example-hello-world.md) that show how to create a small but complete application with Falco. The rest of the docs describe each component of Falco in detail.
 
 ## Guides
 

@@ -1,6 +1,6 @@
 # Request Handling
 
-Falco exposes a __uniform API__ to obtain typed values from `IFormCollection`, `IQueryCollection`, `RouteValueDictionary`, `IHeaderCollection`, and `IRequestCookieCollection`. This is achieved by means of the `RequestData` type and it's derivative `FormData`. These abstractions are intended to make it easier to work with the url-encoded key/value collections.
+Falco exposes a __uniform API__ to obtain typed values from `IFormCollection`, `IQueryCollection`, `RouteValueDictionary`, `IHeaderCollection`, and `IRequestCookieCollection`. This is achieved by means of the `RequestData` type and its derivative `FormData`. These abstractions are intended to make it easier to work with the URL-encoded key/value collections.
 
 > Take note of the similarities when interacting with the different sources of request data.
 
@@ -25,7 +25,7 @@ Content-Length: 46
 user.name=john%20doe&user.email=abc@def123.com
 ```
 
-This will be intepreted as the following `RequestValue`:
+This will be interpreted as the following `RequestValue`:
 
 ```fsharp
 RObject [
@@ -57,7 +57,7 @@ This will be interpreted as the following `RequestValue`:
 RObject [
     "name", RString "john"
     "season", RList [ RString "summer"; RString "winter" ]
-    "hobbies", RList [ RString "hking" ]
+    "hobbies", RList [ RString "hiking" ]
 ]
 ```
 
@@ -145,9 +145,9 @@ let mapQueryHandler : HttpHandler =
 
 ## Form Binding
 
-Provides access to the values found in he `IFormCollection`, as well as the `RouteValueDictionary`. In the case of matching keys, the values in the `IFormCollection` take precedence.
+Provides access to the values found in the `IFormCollection`, as well as the `RouteValueDictionary`. In the case of matching keys, the values in the `IFormCollection` take precedence.
 
-The `FormData` inherits from `RequestData` type also exposes the `IFormFilesCollection` via the `_.Files` member and `_.TryGetFile(name : string)` method.
+The `FormData` type, which inherits from `RequestData`, also exposes the `IFormFilesCollection` via the `_.Files` member and `_.TryGetFile(name : string)` method.
 
 ```fsharp
 type Person =

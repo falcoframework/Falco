@@ -1,12 +1,12 @@
 # Markup
 
-Falco.Markup is broken down into three primary modules, `Elem`, `Attr` and `Text`, which are used to generate elements, attributes and text nodes respectively. Each module contain a suite of functions mapping to the various element/attribute/node names. But can also be extended to create custom elements and attributes.
+Falco.Markup is broken down into three primary modules, `Elem`, `Attr` and `Text`, which are used to generate elements, attributes and text nodes respectively. Each module contains a suite of functions mapping to the various element/attribute/node names. But each can also be extended to create custom elements and attributes.
 
 Primary elements are broken down into two types, `ParentNode` or `SelfClosingNode`.
 
 `ParentNode` elements are those that can contain other elements. Represented as functions that receive two inputs: attributes and optionally elements.
 
-Each of the primary modules can be access using the name directly, or using the "underscore syntax" seen below.
+Each of the primary modules can be accessed using the name directly, or using the "underscore syntax" seen below.
 
 | Module | Syntax |
 |--------|--------|
@@ -41,14 +41,14 @@ let markup =
     ]
 ```
 
-Attributes contain two subtypes as well, `KeyValueAttr` which represent key/value attributes or `NonValueAttr` which represent boolean attributes.
+Attributes contain two subtypes as well, `KeyValueAttr`, which represents key/value attributes, and `NonValueAttr`, which represents boolean attributes.
 
 ```fsharp
 let markup =
     _input [ _type_ "text"; _required_ ]
 ```
 
-Most [JavaScript Events](https://developer.mozilla.org/en-US/docs/Web/Events) have also been mapped in the `Attr` module. All of these events are prefixed with the word "on" (i.e., `_onclick_`, `_onfocus_` etc.)
+Most [JavaScript events](https://developer.mozilla.org/en-US/docs/Web/Events) have also been mapped in the `Attr` module. All of these events are prefixed with the word "on" (i.e., `_onclick_`, `_onfocus_` etc.).
 
 ```fsharp
 let markup =
@@ -118,7 +118,7 @@ let doc (person : Person) =
 
 ### Forms
 
-Forms are the lifeblood of HTML applications. A basic form using the markup module would like the following:
+Forms are the lifeblood of HTML applications. A basic form using the markup module would look like the following:
 
 ```fsharp
 let dt = DateTime.Now
@@ -207,7 +207,7 @@ _form [ _methodPost_; _action_ "/submit" ] [
 
 ### Attribute Value
 
-One of the more common places of sytanctic complexity is with `_value_` which expects, like all `Attr` functions, `string` input. Some helpers exist to simplify this.
+One of the more common places of syntactic complexity is with `_value_` which expects, like all `Attr` functions, `string` input. Some helpers exist to simplify this.
 
 ```fsharp
 let dt = DateTime.Now
@@ -277,12 +277,12 @@ let homepage =
 
 ## Custom Elements & Attributes
 
-Every effort has been taken to ensure the HTML and SVG specs are mapped to functions in the module. In the event an element or attribute you need is missing, you can either file an [issue](https://github.com/pimbrouwers/Falco.Markup/issues), or more simply extend the module in your project.
+Every effort has been made to ensure the HTML and SVG specs are mapped to functions in the module. In the event an element or attribute you need is missing, you can either file an [issue](https://github.com/pimbrouwers/Falco.Markup/issues), or more simply extend the module in your project.
 
-An example creating custom XML elements and using them to create a structured XML document:
+An example of creating custom XML elements and using them to create a structured XML document:
 
 ```fsharp
-open Falco.Makrup
+open Falco.Markup
 
 module XmlElem =
     let books = Attr.create "books"

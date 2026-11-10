@@ -4,7 +4,7 @@
 
 In this example, we'll demonstrate some of the more common htmx attributes and how to use them with Falco.
 
-At this point, we'll assume you have reviewed the docs, other examples and understand the basics of Falco. We don't be covering any of the basics in the code review.
+At this point, we'll assume you have reviewed the docs, other examples and understand the basics of Falco. We won't be covering any of the basics in the code review.
 
 The code for this example can be found [here](https://github.com/FalcoFramework/Falco/tree/master/examples/Htmx).
 

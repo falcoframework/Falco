@@ -52,7 +52,7 @@ let htmlHandler : HttpHandler =
 
 ## Template Fragments
 
-If you want to return a [fragment of HTML](https://htmx.org/essays/template-fragments/), for example when working with [htmx](https://htmx.org/), you can use `Response.ofFragment` (or `Response.ofFragmentCsrf`). This function takes an element ID as its first argument, and a `XmlNode` as its second argument. The server will return only the contents of the node with the specified ID.
+If you want to return a [fragment of HTML](https://htmx.org/essays/template-fragments/), for example when working with [htmx](https://htmx.org/), you can use `Response.ofFragment` (or `Response.ofFragmentCsrf`). This function takes an element ID as its first argument, and an `XmlNode` as its second argument. The server will return only the contents of the node with the specified ID.
 
 ```fsharp
 let fragmentHandler : HttpHandler =
@@ -115,7 +115,7 @@ let attachmentHandler : HttpHandler =
 
 ## Response Modifiers
 
-Response modifiers can be thought of as the in-and-out modification of the `HttpResponse`. A preamble to writing and returning. Since these functions receive the `Httpcontext` as input and return it as the only output, they can take advantage of function compoistion.
+Response modifiers can be thought of as the in-and-out modification of the `HttpResponse`. A preamble to writing and returning. Since these functions receive the `HttpContext` as input and return it as the only output, they can take advantage of function composition.
 
 ### Set the status code of the response
 
@@ -135,7 +135,7 @@ let handlerWithHeaders : HttpHandler =
 
 ### Add a cookie to the response
 
-> IMPORTANT: *Do not* use this for authentication. Instead use the `Response.signInAndRedirect` and `Response.signOutAndRedirect` functions found in the [Authentication](authenication.md) module.
+> IMPORTANT: *Do not* use this for authentication. Instead, use the `Response.signInAndRedirect` and `Response.signOutAndRedirect` functions found in the [Authentication](authentication.md) module.
 
 ```fsharp
 let handlerWithCookie : HttpHandler =

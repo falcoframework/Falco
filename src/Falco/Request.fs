@@ -125,9 +125,9 @@ let private consumeForm (maxSize : int64) (ctx : HttpContext) =
 /// Performs CSRF validation for POST, PUT, PATCH, DELETE requests, if antiforgery
 /// services are registered and a token is provided in the request.
 ///
-/// Automatically detects if request is multipart/form-data, and will enable streaming.
+/// Automatically detects whether the request is multipart/form-data and enables streaming.
 ///
-/// Note: Consumes the request body, so should not be called after body has already been read.
+/// Note: Consumes the request body, so it should not be called after the body has already been read.
 ///
 /// - `maxSize`: The maximum size, in total bytes, allowed for the body being read.
 let getFormOptions (maxSize : int64) (ctx : HttpContext) : Task<FormData option> =
@@ -155,17 +155,17 @@ let getFormOptions (maxSize : int64) (ctx : HttpContext) : Task<FormData option>
 /// Performs CSRF validation for POST, PUT, PATCH, DELETE requests, if antiforgery
 /// services are registered and a token is provided in the request.
 ///
-/// Automatically detects if request is multipart/form-data, and will enable streaming.
+/// Automatically detects whether the request is multipart/form-data and enables streaming.
 ///
 /// Uses a default maximum body size of `Multipart.DefaultMaxSize` for consistency
 /// with multipart form data processing, but can be overridden by using
 /// `getFormOptions` directly.
 ///
-/// Note: Consumes the request body, so should not be called after body has already been read.
+/// Note: Consumes the request body, so it should not be called after the body has already been read.
 let getForm (ctx : HttpContext) : Task<FormData option> =
     getFormOptions Multipart.DefaultMaxSize ctx
 
-/// Attempts to bind request body using System.Text.Json and provided
+/// Attempts to bind the request body using System.Text.Json and the provided
 /// JsonSerializerOptions. If the body is empty or not JSON, returns the default
 /// value of 'T.
 ///
@@ -190,7 +190,7 @@ let getJsonOptions<'T>
             return JsonSerializer.Deserialize<'T>("{}", options)
     }
 
-/// Attempts to bind request body using System.Text.Json and default
+/// Attempts to bind the request body using System.Text.Json and the default
 /// `JsonSerializerOptions`. If the body is empty or not JSON, returns the default
 /// value of 'T.
 let getJson<'T> (ctx : HttpContext) =
@@ -200,7 +200,7 @@ let getJson<'T> (ctx : HttpContext) =
 // Handlers
 // ------------
 
-/// Buffers the current HttpRequest body into a string and provides to next `HttpHandler`.
+/// Buffers the current HttpRequest body into a string and provides it to the next `HttpHandler`.
 /// Note: Uses `getBodyString`, which has a default maximum body size of `Multipart.DefaultMaxSize`
 /// for consistency with multipart form data processing, but can be overridden
 /// by using `getBodyStringOptions` directly.
@@ -213,7 +213,7 @@ let bodyString
         return! next body ctx
     }
 
-/// Projects cookie values onto 'T and provides to next HttpHandler.
+/// Projects cookie values onto 'T and provides the result to the next HttpHandler.
 ///
 /// - `map`: A function that maps the cookie values from the request into a new type 'T.
 /// - `next`: The next `HttpHandler` to invoke, which takes the mapped 'T as input.
@@ -224,7 +224,7 @@ let mapCookies
     |> map
     |> fun route -> next route ctx
 
-/// Projects header values onto 'T and provides to next HttpHandler.
+/// Projects header values onto 'T and provides the result to the next HttpHandler.
 ///
 /// - `map`: A function that maps the header values from the request into a new type 'T.
 /// - `next`: The next `HttpHandler` to invoke, which takes the mapped 'T as input.
@@ -235,7 +235,7 @@ let mapHeaders
     |> map
     |> fun route -> next route ctx
 
-/// Projects route values onto 'T and provides to next HttpHandler.
+/// Projects route values onto 'T and provides the result to the next HttpHandler.
 ///
 /// - `map`: A function that maps the route values from the request into a new type 'T.
 /// - `next`: The next `HttpHandler` to invoke, which takes the mapped 'T as input.
@@ -246,7 +246,7 @@ let mapRoute
     |> map
     |> fun route -> next route ctx
 
-/// Projects query string onto 'T and provides to next HttpHandler.
+/// Projects query string values onto 'T and provides the result to the next HttpHandler.
 ///
 /// - `map`: A function that maps the query string values from the request into a new type 'T.
 /// - `next`: The next `HttpHandler` to invoke, which takes the mapped 'T as input.
@@ -257,13 +257,13 @@ let mapQuery
     |> map
     |> fun query -> next query ctx
 
-/// Projects form data onto 'T and provides to next HttpHandler.
+/// Projects form data onto 'T and provides the result to the next HttpHandler.
 ///
 /// Performs CSRF validation for HTTP POST, PUT, PATCH, DELETE verbs, if antiforgery
 /// services are registered and a token is provided in the request.
 ///
-/// Automatically detects if request is content-type: multipart/form-data, and
-/// if so, will enable streaming.
+/// Automatically detects whether the request is multipart/form-data and enables
+/// streaming if it is.
 ///
 /// - `maxSize`: The maximum size, in total bytes, allowed for the body being read. Should be set according to expected form data size and server limits.
 /// - `map`: A function that maps the form data from the request into a new type 'T.
@@ -280,13 +280,13 @@ let mapFormOptions
         | None -> return! handleInvalid ctx
     }
 
-/// Projects form dta onto 'T and provides to next HttpHandler.
+/// Projects form data onto 'T and provides the result to the next HttpHandler.
 ///
 /// Performs CSRF validation for HTTP POST, PUT, PATCH, DELETE verbs, if antiforgery
 /// services are registered and a token is provided in the request.
 ///
-/// Automatically detects if request is content-type: multipart/form-data, and
-/// if so, will enable streaming.
+/// Automatically detects whether the request is multipart/form-data and enables
+/// streaming if it is.
 ///
 /// Uses `getForm` with a default maximum body size of `Multipart.DefaultMaxSize` for consistency
 /// with multipart form data processing, but can be overridden by using `mapFormOptions` directly.
@@ -299,7 +299,7 @@ let mapForm
     (handleInvalid : HttpHandler): HttpHandler =
     mapFormOptions Multipart.DefaultMaxSize map next handleInvalid
 
-/// Validates the CSRF of the current request.
+/// Validates the CSRF token for the current request.
 ///
 /// - `handleOk`: The `HttpHandler` to invoke if the CSRF token is valid or if validation is not applicable.
 /// - `handleInvalidToken`: The `HttpHandler` to invoke if the CSRF token
@@ -317,9 +317,10 @@ let validateCsrfToken
         return! respondWith ctx
     }
 
-/// Projects JSON using custom JsonSerializerOptions onto 'T and provides to next
-/// `HttpHandler`, throws `JsonException` if errors occur during deserialization.
-/// If the body is empty or not JSON, returns the default value of 'T.
+/// Projects JSON using custom JsonSerializerOptions onto 'T and provides the
+/// result to the next `HttpHandler`. Throws `JsonException` if errors occur
+/// during deserialization. If the body is empty or not JSON, returns the default
+/// value of 'T.
 ///
 /// - `options`: The `JsonSerializerOptions` to use during deserialization.
 /// - `next`: The next `HttpHandler` to invoke, which takes the mapped 'T as input.
@@ -331,9 +332,9 @@ let mapJsonOptions<'T>
         return! next json ctx
     }
 
-/// Projects JSON onto 'T and provides to next `HttpHandler`, throws `JsonException`
-/// if errors occur during deserialization. If the body is empty or not JSON, returns
-/// the default value of 'T.
+/// Projects JSON onto 'T and provides the result to the next `HttpHandler`. Throws
+/// `JsonException` if errors occur during deserialization. If the body is empty or
+/// not JSON, returns the default value of 'T.
 ///
 /// Uses `getJson` with default `JsonSerializerOptions`, but can be overridden by using `mapJsonOptions` directly.
 ///
@@ -347,8 +348,8 @@ let mapJson<'T>
 // ------------
 
 /// Attempts to authenticate the current request using the provided scheme and
-/// passes AuthenticateResult into next HttpHandler. Does not modify the
-/// `HttpContext.User` or authentication status, and does not challenge or forbid on its own.
+/// passes the AuthenticateResult to the next HttpHandler. Does not modify the
+/// `HttpContext.User` or the authentication status, and does not challenge or forbid on its own.
 ///
 /// - `authScheme`: The authentication scheme to use when authenticating the request. This should match the scheme used in your authentication configuration.
 /// - `next`: The next `HttpHandler` to invoke, which takes the `AuthenticateResult` as input.
@@ -360,8 +361,8 @@ let authenticate
         return! next authenticateResult ctx
     }
 
-/// Authenticate the current request using the default authentication scheme. Proceeds
-/// if the authentication status of current `IPrincipal` is true.
+/// Authenticates the current request using the default authentication scheme. Proceeds
+/// if the authentication status of the current `IPrincipal` is true.
 ///
 /// Note: The default authentication scheme can be configured using
 /// `Microsoft.AspNetCore.Authentication.AuthenticationOptions.DefaultAuthenticateScheme.`
@@ -377,8 +378,8 @@ let ifAuthenticated
         else
             ctx.ForbidAsync())
 
-/// Proceeds if the authentication status of current `IPrincipal` is true and
-/// they exist in a list of roles.
+/// Proceeds if the authentication status of the current `IPrincipal` is true and
+/// the user is in one of the specified roles.
 ///
 /// The roles are checked using `ClaimsPrincipal.IsInRole`, so the role claim type
 /// is determined by the authentication handler in use. For example, with JWT Bearer
@@ -405,7 +406,7 @@ let ifAuthenticatedInRole
         | _ ->
             ctx.ForbidAsync())
 
-/// Proceeds if the authentication status of current IPrincipal is true and has
+/// Proceeds if the authentication status of the current IPrincipal is true and has
 /// a specific scope.
 ///
 /// The scope is checked by looking for a claim of type "scope" with the specified
@@ -440,7 +441,7 @@ let ifAuthenticatedWithScope
         else
             ctx.ForbidAsync())
 
-/// Proceeds if the authentication status of current IPrincipal is false.
+/// Proceeds if the authentication status of the current IPrincipal is false.
 ///
 /// This can be used to allow access to certain handlers only for unauthenticated
 /// users, such as a login or registration page. If the user is authenticated, a

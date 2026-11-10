@@ -30,7 +30,7 @@ wapp.UseRouting()
     // ^-- run app and register terminal HttpHandler
 ```
 
-First, we open the required namespaces. `Falco` bring into scope the ability to activate the library and some other extension methods to make the fluent API more user-friendly.
+First, we open the required namespaces. `Falco` brings into scope the ability to activate the library and some other extension methods to make the fluent API more user-friendly.
 
 `Microsoft.AspNetCore.Builder` enables us to create web applications in a number of ways, we're using `WebApplication.Create()` above. It also adds many other useful extension methods, that you'll see later.
 

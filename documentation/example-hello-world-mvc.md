@@ -1,6 +1,6 @@
 # Example - Hello World MVC
 
-Let's take our basic [Hello World](example-hello-world.md) to the next level. This means we're going to dial up the complexity a little bit. But we'll do this using the well recognized MVC pattern. We'll contain the app to a single file to make "landscaping" the pattern more straight-forward.
+Let's take our basic [Hello World](example-hello-world.md) to the next level. This means we're going to dial up the complexity a little bit. But we'll do this using the well-recognized MVC pattern. We'll contain the app to a single file to make "landscaping" the pattern more straightforward.
 
 The code for this example can be found [here](https://github.com/FalcoFramework/Falco/tree/master/examples/HelloWorldMvc).
 
@@ -25,7 +25,7 @@ It's a simple model in this case because our application is purposefully simple.
 
 Falco comes packaged with a [lovely little HTML DSL](https://github.com/FalcoFramework/Falco.Markup/). It can produce any form of angle-markup, and does so very [efficiently](https://github.com/FalcoFramework/Falco.Markup/?tab=readme-ov-file#performance). The main benefit is that our views are _pure_ F#, compile-time checked and live alongside the rest of our code.
 
-First we define a shared HTML5 `layout` function, that references our project `style.css`. Then a small menu component which takes our greeting and a list of "actions", the combination of URL function and label.
+First we define a shared HTML5 `layout` function that references our project `style.css`. Then a small menu component which takes our greeting and a list of "actions", the combination of URL function and label.
 
 Next, we define a module to contain the view for our greeting which uses our layout and component.
 
@@ -86,11 +86,11 @@ module ErrorResponse =
         Response.ofHtml (View.layout [ _h1' "Server Error" ])
 ```
 
-Here we see the [`HttpResponseModifier`](repsonse.md#response-modifiers) at play, which set the status code before buffering out the HTML response. We'll reference these responses later when be [build the web server](#web-server).
+Here we see the [`HttpResponseModifier`](response.md#response-modifiers) at play, which sets the status code before buffering out the HTML response. We'll reference these responses later when we [build the web server](#web-server).
 
 ## Controller
 
-Our controller will be responsible for three actions, as defined in our [route](#routing) module. We define three handlers which output the user provided "name" in different ways: plain text, JSON and HTML.
+Our controller will be responsible for three actions, as defined in our [route](#routing) module. We define three handlers which output the user-provided "name" in different ways: plain text, JSON and HTML.
 
 ```fsharp
 module GreetingController =
@@ -122,7 +122,7 @@ You'll notice that this controller defines its own `endpoints` too. This associa
 
 This is a great opportunity to demonstrate further how to configure a more complex web server than we saw in the basic hello world example.
 
-To do that, we'll define an explicit entry point function which gives us access to the command line argument. By then forwarding these into the web application, we gain further [configurability](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration#command-line). You'll notice the application contains a file called `appsettings.json`, this is another [ASP.NET convention](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration#default-application-configuration-sources) that provides fully-featured and extensible configuration functionality and is automatically available when using `WebApplicaton.Create()`.
+To do that, we'll define an explicit entry point function which gives us access to the command line argument. By then forwarding these into the web application, we gain further [configurability](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration#command-line). You'll notice the application contains a file called `appsettings.json`, this is another [ASP.NET convention](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration#default-application-configuration-sources) that provides fully-featured and extensible configuration functionality and is automatically available when using `WebApplication.Create()`.
 
 In this example, we examine the environment name to create an "is development" toggle. We use this to determine the extensiveness of our error output. You'll notice we use our exception page from above when an exception occurs when not in development mode. Otherwise, we show a developer-friendly error page. Next we activate static file support, via the default web root of `wwwroot`.
 
@@ -148,6 +148,6 @@ module Program =
 
 ## Wrapping Up
 
-This example was a leap ahead from our basic hello world. But having followed this, you know understand many of the patterns you'll need to know to build end-to-end server applications with Falco. Unsurprisingly, the entire program fits inside 86 LOC. One of the magnificent benefits of writing code in F#.
+This example was a leap ahead from our basic hello world. But having followed this, you now understand many of the patterns you'll need to know to build end-to-end server applications with Falco. Unsurprisingly, the entire program fits inside 86 LOC. One of the magnificent benefits of writing code in F#.
 
 [Next: Example - Dependency Injection](example-dependency-injection.md)

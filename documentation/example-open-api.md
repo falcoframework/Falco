@@ -18,7 +18,7 @@ The code for this example can be found [here](https://github.com/FalcoFramework/
 
 ## Fortunes
 
-Our fortune teller will return fortune for the name of the person specified. To model this, we'll create two simple record types.
+Our fortune teller will return a fortune for the name of the person specified. To model this, we'll create two simple record types.
 
 ```fsharp
 type FortuneInput =

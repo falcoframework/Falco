@@ -8,8 +8,8 @@ open Microsoft.AspNetCore.Routing
 open Microsoft.Extensions.FileProviders
 open Falco.StringUtils
 
-/// Specifies an association of a route pattern to a collection of
-/// HttpEndpointHandler.
+/// Specifies an association between a route pattern and a collection of
+/// HttpEndpointHandler instances.
 type HttpEndpoint =
     { Pattern  : string
       Handlers : (HttpVerb * HttpHandler) seq
@@ -97,7 +97,7 @@ module Routing =
     let options pattern handler =
         route OPTIONS pattern handler
 
-    /// TRACE HttpEndpoint construct.
+    /// TRACE HttpEndpoint constructor.
     ///
     /// - `pattern` - The route pattern to which the HttpHandler will be associated.
     /// - `handler` - The HttpHandler to be associated with the TRACE HttpVerb and provided route pattern.
@@ -189,7 +189,7 @@ module Routing =
     let mapOptions pattern map handler =
         options pattern (Request.mapRoute map handler)
 
-    /// TRACE HttpEndpoint construct which maps the route using the provided
+    /// TRACE HttpEndpoint constructor which maps the route using the provided
     /// `map` function.
     ///
     /// - `pattern` - The route pattern to which the HttpHandler will be associated.
