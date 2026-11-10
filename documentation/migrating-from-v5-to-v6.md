@@ -29,9 +29,9 @@ let myHandler : HttpHandler = fun ctx ->
     task {
         let! form = Request.getForm ctx
 
-        match form.IsValid with
-        | true -> // do something with form
-        | false -> // handle failed csrf validation
+        match form with
+        | Some form -> // do something with form
+        | None -> // handle failed CSRF validation or an oversized form
     }
 ```
 
@@ -74,16 +74,15 @@ type MyForm =
 
 let myHandler : HttpHandler =
     let formMap (form : FormData) : MyForm  =
-        match form.IsValid with
-        | true -> Some // do something with form
-        | false -> None // handle failed csrf validation
+        // do something with form
 
-    let handler (myForm : MyForm option) : HttpHandler =
-        match myForm with
-        | Some myForm -> // do something with myForm
-        | None -> // handle failed csrf validation
+    let handler (myForm : MyForm) : HttpHandler =
+        // do something with myForm
 
-    Request.mapForm formMap handler
+    let handleInvalid : HttpHandler =
+        // handle failed CSRF validation or an oversized form
+
+    Request.mapForm formMap handler handleInvalid
 ```
 
 </td>

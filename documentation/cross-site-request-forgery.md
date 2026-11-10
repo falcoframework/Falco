@@ -64,7 +64,7 @@ let csrfViewHandler : HttpHandler =
 
 // A handler that demonstrates validating
 // the request's CSRF token
-let mapFormSecureHandler : HttpHandler =
+let mapFormHandler : HttpHandler =
     let mapPerson (form : FormData) =
         { FirstName = form?first_name.AsString()
           LastName = form?last_name.AsString }
@@ -73,7 +73,7 @@ let mapFormSecureHandler : HttpHandler =
         Response.withStatusCode 400
         >> Response.ofEmpty
 
-    Request.mapFormSecure mapPerson Response.ofJson handleInvalid
+    Request.mapForm mapPerson Response.ofJson handleInvalid
 ```
 
 [Next: Authentication](authentication.md)

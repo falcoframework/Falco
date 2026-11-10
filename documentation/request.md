@@ -147,7 +147,7 @@ let mapQueryHandler : HttpHandler =
 
 Provides access to the values found in the `IFormCollection`, as well as the `RouteValueDictionary`. In the case of matching keys, the values in the `IFormCollection` take precedence.
 
-The `FormData` type, which inherits from `RequestData`, also exposes the `IFormFilesCollection` via the `_.Files` member and `_.TryGetFile(name : string)` method.
+The `FormData` type, which inherits from `RequestData`, also exposes the uploaded files via the `_.Files` member and the `_.TryGetFile(name : string)` method.
 
 ```fsharp
 type Person =
@@ -156,13 +156,15 @@ type Person =
 
 let manualFormHandler : HttpHandler = fun ctx ->
     task {
-        let! f : FormData = Request.getForm ctx
-
-        let person =
-            { FirstName = f.GetString ("FirstName", "John") // Get value or return default value
-              LastName = f.GetString ("LastName", "Doe") }
-
-        return! Response.ofJson person ctx
+        let! form = Request.getForm ctx
+        match form with
+        | Some f ->
+            let person =
+                { FirstName = f.GetString ("FirstName", "John") // Get value or return default value
+                  LastName = f.GetString ("LastName", "Doe") }
+            return! Response.ofJson person ctx
+        | None ->
+            return! (Response.withStatusCode 400 >> Response.ofEmpty) ctx
     }
 
 let mapFormHandler : HttpHandler =
@@ -171,16 +173,11 @@ let mapFormHandler : HttpHandler =
         let last = f.GetString ("LastName", "Doe")
         { FirstName = first; LastName = last })
         Response.ofJson
-
-let mapFormSecureHandler : HttpHandler =
-    Request.mapFormSecure (fun f -> // `Request.mapFormSecure` will automatically validate CSRF token for you.
-        let first = f.GetString ("FirstName", "John") // Get value or return default value
-        let last = f.GetString ("LastName", "Doe")
-        { FirstName = first; LastName = last })
-        Response.ofJson
         (Response.withStatusCode 400 >> Response.ofEmpty)
 
 ```
+
+> Note: When antiforgery services are registered, `Request.getForm` and `Request.mapForm` validate the CSRF token for the request.
 
 ### `multipart/form-data` Binding
 
@@ -191,26 +188,13 @@ To make this process **a lot** easier Falco's form handlers will attempt to stre
 ```fsharp
 let imageUploadHandler : HttpHandler =
     let formBinder (f : FormData) : IFormFile option =
-        f.TryGetFormFile "profile_image"
+        f.TryGetFile "profile_image"
 
     let uploadImage (profileImage : IFormFile option) : HttpHandler =
         // Process the uploaded file ...
 
     // Safely buffer the multipart form submission
-    Request.mapForm formBinder uploadImage
-
-let secureImageUploadHandler : HttpHandler =
-    let formBinder (f : FormData) : IFormFile option =
-        f.TryGetFormFile "profile_image"
-
-    let uploadImage (profileImage : IFormFile option) : HttpHandler =
-        // Process the uploaded file ...
-
-    let handleInvalidCsrf : HttpHandler =
-        Response.withStatusCode 400 >> Response.ofEmpty
-
-    // Safely buffer the multipart form submission
-    Request.mapFormSecure formBinder uploadImage handleInvalidCsrf
+    Request.mapForm formBinder uploadImage (Response.withStatusCode 400 >> Response.ofEmpty)
 ```
 
 ## JSON
