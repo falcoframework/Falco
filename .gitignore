@@ -11,9 +11,11 @@
 *.sln.docstates
 [Ee]xamples/[Ss]andbox/
 [Ss]andbox/
+[Bencmarks]/[Bbuild]/
 *.sqlite
 *.sqlite3
 [Mm]emory
+*.exe
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

@@ -1,0 +1,17 @@
+<Project>
+    <PropertyGroup>
+        <SelfContained>true</SelfContained>
+        <SatelliteResourceLanguages>en-US</SatelliteResourceLanguages>
+        <PublishSingleFile>true</PublishSingleFile>
+        <PublishTrimmed>true</PublishTrimmed>
+        <TrimMode>Link</TrimMode>
+        <!-- <PublishAot>true</PublishAot> -->
+        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <UseSystemResourceKeys>true</UseSystemResourceKeys>
+        <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    </PropertyGroup>
+    <ItemGroup>
+        <TrimmerRootAssembly Include="Microsoft.AspNetCore.Server.Kestrel.Core" />
+    </ItemGroup>
+</Project>
