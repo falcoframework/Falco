@@ -8,7 +8,7 @@ param (
     [ValidateSet("Debug", "Release")]
     [string] $Configuration = "Debug",
 
-    [switch] $NoRestore,
+    [switch] $Force,
 
     [switch] $Clean
 )
@@ -33,19 +33,22 @@ switch ($Action) {
     Default           { $projectDir = Join-Path $srcDir 'Falco' }
 }
 
-if(!$NoRestore.IsPresent) {
-    RunCommand "dotnet restore $projectDir --force --force-evaluate --nologo --verbosity quiet"
-}
-
 if ($Clean) {
     RunCommand "dotnet clean $projectDir -c $Configuration --nologo --verbosity quiet"
 }
 
+if($ForceRestore) {
+    RunCommand "dotnet restore $projectDir --force --force-evaluate --no-http-cache --nologo --verbosity quiet"
+}
+else {
+    RunCommand "dotnet restore $projectDir --nologo --verbosity quiet"
+}
+
 switch ($Action) {
-    "Test"            { RunCommand "dotnet test `"$projectDir`"" }
-    "IntegrationTest" { RunCommand "dotnet test `"$projectDir`"" }
+    "Test"            { RunCommand "dotnet test `"$projectDir`" --no-restore" }
+    "IntegrationTest" { RunCommand "dotnet test `"$projectDir`" --no-restore" }
     "Pack"            { RunCommand "dotnet pack `"$projectDir`" -c $Configuration --include-symbols --include-source" }
     "BuildSite"       { RunCommand "dotnet run --project `"$projectDir`" -- `"$docsOutputDir`"" }
     "DevelopSite"     { RunCommand "dotnet watch --project `"$projectDir`" -- run `"$docsOutputDir`"" }
-    Default           { RunCommand "dotnet build `"$projectDir`" -c $Configuration" }
+    Default           { RunCommand "dotnet build `"$projectDir`" -c $Configuration --no-restore" }
 }
