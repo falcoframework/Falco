@@ -11,6 +11,7 @@ open Microsoft.Extensions.Primitives
 open Microsoft.Net.Http.Headers
 
 module Multipart =
+    /// The default maximum size, in bytes, allowed for an uploaded file.
     [<Literal>]
     let DefaultMaxSize = 32L * 1024L * 1024L // 32mb
 
@@ -89,7 +90,7 @@ module Multipart =
         /// Streams the multipart sections and accumulates form values and files into an `IFormCollection`.
         ///
         /// - `ct`: A `CancellationToken` to observe while waiting for the task to complete.
-        /// - `maxSize`: The maximum size, in total bytes, allowed for each individual section being streamed.
+        /// - `maxSize`: The maximum size, in bytes, allowed for each uploaded file.
         member x.StreamSectionsAsync(ct : CancellationToken, ?maxSize : int64) =
             task {
                 let formData = new KeyValueAccumulator()
@@ -133,7 +134,10 @@ module Multipart =
             | b when b.Length > lengthLimit -> None
             | b -> Some b
 
-        /// Attempts to stream the HttpRequest body into IFormCollection.
+        /// Attempts to stream the HttpRequest body into an IFormCollection.
+        ///
+        /// - `ct`: A `CancellationToken` to observe while waiting for the task to complete.
+        /// - `maxFileSize`: The maximum size, in bytes, allowed for each uploaded file.
         member x.StreamFormAsync (ct : CancellationToken, ?maxFileSize : int64) : Task<IFormCollection> =
             task {
                 match x.IsMultipart(), x.GetBoundary() with

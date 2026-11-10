@@ -36,8 +36,7 @@ let getVerb (ctx : HttpContext) : HttpVerb =
     | _ -> ANY
 
 /// Streams the request body into a string, up to the maximum size defined by `maxSize`.
-/// Cannot be called after the body has already been read, and will throw an
-/// exception if the body is not seekable and empty.
+/// Reads from the current position of the request body stream.
 ///
 /// - `maxSize`: The maximum size, in total bytes, allowed for the body being read.
 let getBodyStringOptions (maxSize : int64) (ctx : HttpContext) : Task<string> =
@@ -64,8 +63,7 @@ let getBodyStringOptions (maxSize : int64) (ctx : HttpContext) : Task<string> =
     }
 
 /// Streams the request body into a string, up to a maximum body size of `Multipart.DefaultMaxSize`.
-/// Cannot be called after the body has already been read, and will throw an
-/// exception if the body is not seekable and empty.
+/// Reads from the current position of the request body stream.
 ///
 /// Note: `Multipart.DefaultMaxSize` is used as the default maximum body size for
 /// consistency with multipart form data processing, but can be overridden by using
@@ -302,7 +300,7 @@ let mapForm
 /// Validates the CSRF token for the current request.
 ///
 /// - `handleOk`: The `HttpHandler` to invoke if the CSRF token is valid or if validation is not applicable.
-/// - `handleInvalidToken`: The `HttpHandler` to invoke if the CSRF token
+/// - `handleInvalidToken`: The `HttpHandler` to invoke if the CSRF token is invalid.
 let validateCsrfToken
     (handleOk : HttpHandler)
     (handleInvalidToken : HttpHandler) : HttpHandler = fun ctx ->

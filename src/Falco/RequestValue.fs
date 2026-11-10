@@ -9,12 +9,19 @@ open Microsoft.AspNetCore.Routing
 open Microsoft.FSharp.Core.Operators
 open Falco.StringPatterns
 
+/// Represents request data as a parsed value.
 type RequestValue =
+    /// Represents a missing or empty value.
     | RNull
+    /// Represents a Boolean value.
     | RBool of bool
+    /// Represents a numeric value.
     | RNumber of float
+    /// Represents a string value.
     | RString of string
+    /// Represents a list of request values.
     | RList of elements : RequestValue list
+    /// Represents an object as a sequence of named request values.
     | RObject of keyValues : (string * RequestValue) list
 
 module internal RequestValueParser =

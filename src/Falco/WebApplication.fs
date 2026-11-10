@@ -27,10 +27,12 @@ module Extensions =
             this
 
     type WebApplicationBuilder with
+        /// Applies `fn` to the application's configuration builder.
         member this.AddConfiguration(fn : IConfigurationBuilder -> IConfigurationBuilder) : WebApplicationBuilder =
             fn this.Configuration |> ignore
             this
 
+        /// Applies `fn` to the application's logging builder.
         member this.AddLogging(fn : ILoggingBuilder -> ILoggingBuilder) : WebApplicationBuilder =
             fn this.Logging |> ignore
             this
@@ -40,6 +42,7 @@ module Extensions =
             if predicate then fn this.Configuration this.Services |> ignore
             this
 
+        /// Applies `fn` to the application's configuration and service collection.
         member this.AddServices(fn : IConfiguration -> IServiceCollection -> IServiceCollection) : WebApplicationBuilder =
             this.AddServicesIf(true, fn)
 
@@ -65,6 +68,7 @@ module Extensions =
                 |> fun moduleEndpoints -> Seq.concat [ endpoints; moduleEndpoints ]
                 |> endpointBuilder.UseFalcoEndpoints |> ignore)
 
+        /// Activates Falco integration with IEndpointRouteBuilder without additional endpoints.
         member this.UseFalco() =
             this.UseFalco([])
 
@@ -102,6 +106,7 @@ module Extensions =
         member this.Use(fn : IApplicationBuilder -> IApplicationBuilder) : WebApplication =
             this.UseIf(true, fn)
 
+        /// Adds endpoint routing to the application pipeline.
         member this.UseRouting() : WebApplication =
             (this :> IApplicationBuilder).UseRouting() |> ignore
             this
@@ -113,6 +118,7 @@ module Extensions =
             (this :> IApplicationBuilder).UseFalco(endpoints) |> ignore
             this
 
+        /// Activates Falco integration with IEndpointRouteBuilder without additional endpoints.
         member this.UseFalco() =
             this.UseFalco([])
 
@@ -127,6 +133,7 @@ module Extensions =
             (this :> IApplicationBuilder).UseFalcoNotFound(notFoundHandler) |> ignore
             this
 
+    /// Provides extension methods for Falco application configuration.
     type FalcoExtensions =
         /// Registers a `Falco.HttpHandler` as global exception handler.
         static member UseFalcoExceptionHandler

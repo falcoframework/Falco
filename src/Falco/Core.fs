@@ -12,19 +12,28 @@ module HttpHandler =
     let toRequestDelegate (handler : HttpHandler) =
         new RequestDelegate(handler)
 
-/// In-and-out processing of an HttpContext.
+/// Modifies an HttpContext and returns it for further processing.
 type HttpResponseModifier = HttpContext -> HttpContext
 
-/// HTTP verb.
+/// An HTTP method supported by endpoint routing.
 type HttpVerb =
+    /// The HTTP GET method.
     | GET
+    /// The HTTP HEAD method.
     | HEAD
+    /// The HTTP POST method.
     | POST
+    /// The HTTP PUT method.
     | PUT
+    /// The HTTP PATCH method.
     | PATCH
+    /// The HTTP DELETE method.
     | DELETE
+    /// The HTTP OPTIONS method.
     | OPTIONS
+    /// The HTTP TRACE method.
     | TRACE
+    /// Any HTTP method.
     | ANY
 
     override x.ToString() =

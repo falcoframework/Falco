@@ -8,15 +8,18 @@ open Microsoft.AspNetCore.Routing
 open Microsoft.Extensions.FileProviders
 open Falco.StringUtils
 
-/// Specifies an association between a route pattern and a collection of
-/// HttpEndpointHandler instances.
-type HttpEndpoint =
-    { Pattern  : string
-      Handlers : (HttpVerb * HttpHandler) seq
-      Configure : EndpointBuilder -> EndpointBuilder }
+/// Specifies a route pattern and the handlers associated with it.
+type HttpEndpoint = {
+    /// The route pattern for the endpoint.
+    Pattern  : string
+    /// The HTTP methods and handlers associated with the route pattern.
+    Handlers : (HttpVerb * HttpHandler) seq
+    /// Configures the endpoint builder before the endpoint is created.
+    Configure : EndpointBuilder -> EndpointBuilder }
 
-/// Represents a module that can provide a collection of HTTP endpoints.
+/// Provides a collection of HTTP endpoints to Falco routing.
 type IFalcoModule =
+    /// The endpoints provided by this module.
     abstract member Endpoints : HttpEndpoint seq
 
 module Routing =
@@ -158,7 +161,7 @@ module Routing =
     ///
     /// - `pattern` - The route pattern to which the HttpHandler will be associated.
     /// - `map` - A function that takes the route pattern and returns a mapped value which will be included in the HttpContext for the HttpHandler to use.
-    /// - `handler` - The HttpHandler to be associated with the PUT HttpVerb and provided route pattern, which will receive the mapped value in the HttpContext.
+    /// - `handler` - The HttpHandler to be associated with the PUT HttpVerb and provided route pattern, which will receive the mapped value in the HttpContext. provided route pattern, which will receive the mapped value in the HttpContext.
     let mapPut pattern map handler =
         put pattern (Request.mapRoute map handler)
 
@@ -167,7 +170,7 @@ module Routing =
     ///
     /// - `pattern` - The route pattern to which the HttpHandler will be associated.
     /// - `map` - A function that takes the route pattern and returns a mapped value which will be included in the HttpContext for the HttpHandler to use.
-    /// - `handler` - The HttpHandler to be associated with the PATCH HttpVerb and provided route pattern, which will receive the mapped value in the HttpContext.
+    /// - `handler` - The HttpHandler to be associated with the PATCH HttpVerb and provided route pattern, which will receive the mapped value in the HttpContext. provided route pattern, which will receive the mapped value in the HttpContext.
     let mapPatch pattern map handler =
         patch pattern (Request.mapRoute map handler)
 
@@ -227,18 +230,24 @@ module Routing =
 
         { endpoint with Configure = endpoint.Configure >> configure }
 
+/// Provides the endpoints registered with the Falco routing integration.
+/// - `httpEndpoints`: The endpoints to register with the data source.
 [<Sealed>]
 type FalcoEndpointDataSource(httpEndpoints : HttpEndpoint seq) =
     inherit EndpointDataSource()
 
     let conventions = List<Action<EndpointBuilder>>()
 
+    /// Creates an empty endpoint data source.
     new() = FalcoEndpointDataSource([])
 
+    /// The endpoints added to this data source.
     member val FalcoEndpoints = List<HttpEndpoint>()
 
+    /// Gets the endpoints registered with this data source.
     override x.Endpoints with get() = x.BuildEndpoints()
 
+    /// Returns a token that does not signal changes to this endpoint data source.
     override _.GetChangeToken() = NullChangeToken.Singleton
 
     member private this.BuildEndpoints () =

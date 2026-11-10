@@ -252,8 +252,7 @@ let ofJson
     withContentType "application/json; charset=utf-8"
     >> ofJsonOptions Request.defaultJsonOptions obj
 
-/// Signs in the claim principal for the provided scheme, then responds with a
-/// 301 redirect to the provided URL.
+/// Signs in the claim principal for the provided scheme.
 ///
 /// - `authScheme` - The name of the authentication scheme to use when signing in the claim principal.
 /// - `claimsPrincipal` - The ClaimsPrincipal to sign in for the specified authentication scheme.
@@ -264,8 +263,8 @@ let signIn
         do! ctx.SignInAsync(authScheme, claimsPrincipal)
     }
 
-/// Signs in the claim principal for the provided scheme and options, then responds
-/// with a 301 redirect to the provided URL (via AuthenticationProperties.RedirectUri).
+/// Signs in the claim principal for the provided scheme and options.
+/// If `RedirectUri` is set, the response includes a 301 status code and a `Location` header.
 ///
 /// - `authScheme` - The name of the authentication scheme to use when signing in the claim principal.
 /// - `claimsPrincipal` - The ClaimsPrincipal to sign in for the specified authentication scheme.
@@ -296,8 +295,8 @@ let signInAndRedirect
     let options = AuthenticationProperties(RedirectUri = url)
     signInOptions authScheme claimsPrincipal options
 
-/// Terminates the authenticated context for the provided scheme, then responds
-/// with a 301 redirect to the provided URL (via AuthenticationProperties.RedirectUri).
+/// Signs out the authenticated context for the provided scheme.
+/// If `RedirectUri` is set, the response includes a 301 status code and a `Location` header.
 ///
 /// - `authScheme` - The name of the authentication scheme to use when signing out the authenticated context.
 let signOut
@@ -306,8 +305,7 @@ let signOut
         do! ctx.SignOutAsync authScheme
     }
 
-/// Terminates the authenticated context for the provided scheme, then responds
-/// with a 301 redirect to the provided URL.
+/// Signs out the authenticated context for the provided scheme, then redirects to the provided URL.
 ///
 /// - `authScheme` - The name of the authentication scheme to use when signing out the authenticated context.
 /// - `options` - The AuthenticationProperties to use when signing out, which may include a RedirectUri for the post-sign-out redirect URL.
@@ -339,9 +337,8 @@ let signOutAndRedirect
 /// requests an endpoint that requires authentication. The given redirectUri is
 /// forwarded to the authentication handler for use after authentication succeeds.
 ///
-/// Note: If options.RedirectUri is provided, a 401 status code and Location header
-/// will be included in the response, with the Location header set to the RedirectUri.
-/// Otherwise, no status code or Location header will be included in the response.
+/// Note: A 401 status code and `WWW-Authenticate` header are included in the response.
+/// If `options.RedirectUri` is provided, a `Location` header is also included.
 ///
 /// - `authScheme` - The name of the authentication scheme to challenge.
 /// - `options` - The AuthenticationProperties to use when challenging, which may include a RedirectUri for the post-challenge redirect URL.
