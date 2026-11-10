@@ -144,7 +144,7 @@ module View =
     let private _layoutFooter =
         _footer [ _class_ "cl pa3 bg-merlot" ] [
             _div [ _class_ "f7 tc white-70" ]
-                [ _text $"&copy; 2020-{DateTime.Now.Year} Pim Brouwers & contributors." ]
+                [ _text $"&copy; 2020-Present Pim Brouwers & contributors." ]
         ]
 
     let layout (model : LayoutModel) =
@@ -331,6 +331,6 @@ let main args =
         printfn "Rendering /%s docs" languageCode
         let languageDir = DirectoryInfo(Path.Join(docsDir.FullName, languageCode))
         let languageBuildDir = DirectoryInfo(Path.Join(docsBuildDir.FullName, languageCode))
-        Docs.build (languageDir.GetFiles()) languageBuildDir
+        Docs.build (languageDir.GetFiles() "*.md") languageBuildDir
 
     0
