@@ -1,12 +1,13 @@
-﻿module Falco.Tests.Routing
+module Falco.Tests.Routing
 
+open System
+open System.Collections.Generic
 open Xunit
 open Falco
 open Falco.Routing
 open FsUnit.Xunit
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Routing
-open System
 
 let emptyHandler : HttpHandler = Response.ofPlainText ""
 
@@ -72,10 +73,8 @@ let ``HTTP verb helpers create correct endpoints`` () =
 [<Fact>]
 let ``mapGet should compose route mapping with handler`` () =
     let pattern = "/users/{id}"
-    let mutable capturedId = ""
 
     let handler (id: string) : HttpHandler =
-        capturedId <- id
         Response.ofEmpty
 
     let endpoint = mapGet pattern (fun r -> r.GetString "id") handler
@@ -91,6 +90,26 @@ let ``mapPost should compose route mapping with handler`` () =
 
     let (verb, _) = Seq.head endpoint.Handlers
     verb |> should equal POST
+
+[<Fact>]
+let ``mapAll should compose route mapping with handler`` () =
+    let pattern = "/users/{id}"
+
+    let handler (id: string) : HttpHandler =
+        Response.ofEmpty
+
+    let endpoint = mapAll pattern (fun r -> r.GetString "id") [
+        GET, handler
+        POST, handler
+        PUT, handler ]
+
+    endpoint.Pattern |> should equal pattern
+    let capturedVerbs = List<HttpVerb>()
+
+    for (verb, handler) in endpoint.Handlers do
+        capturedVerbs.Add(verb)
+
+    capturedVerbs.Count |> should equal 3
 
 [<Fact>]
 let ``all map* functions create correct verb endpoints`` () =
