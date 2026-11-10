@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/site/">
+    <Project Path="site/Site.fsproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Falco/Falco.fsproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/Falco.IntegrationTests.App/Falco.IntegrationTests.App.fsproj" />
+    <Project Path="test/Falco.IntegrationTests/Falco.IntegrationTests.fsproj" />
+    <Project Path="test/Falco.Tests/Falco.Tests.fsproj" />
+  </Folder>
+</Solution>

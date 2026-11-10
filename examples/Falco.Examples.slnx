@@ -1,0 +1,10 @@
+<Solution>
+  <Project Path="../src/Falco/Falco.fsproj" />
+  <Project Path="BasicRestApi/BasicRestApi.fsproj" />
+  <Project Path="DependencyInjection/DependencyInjection.fsproj" />
+  <Project Path="ExternalViewEngine/ExternalViewEngine.fsproj" />
+  <Project Path="HelloWorld/HelloWorld.fsproj" />
+  <Project Path="HelloWorldMvc/HelloWorldMvc.fsproj" />
+  <Project Path="Htmx/Htmx.fsproj" />
+  <Project Path="OpenApi/OpenApi.fsproj" />
+</Solution>
