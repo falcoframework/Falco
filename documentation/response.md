@@ -69,6 +69,11 @@ This will return only the contents of the `h1` element, i.e. `<h1 id="heading">H
 ## JSON responses
 
 These handlers use the .NET built-in `System.Text.Json.JsonSerializer`.
+`Response.ofJson` and `Response.ofJsonOptions` buffer the serialized JSON and set
+`Content-Length`. For streaming, use `Response.ofJsonChunked` or
+`Response.ofJsonOptionsChunked`. These do not set `Content-Length`, and a
+serialization failure may leave a partial response. HTTP/1.1 uses chunked transfer
+encoding when appropriate; HTTP/2 and HTTP/3 use their own framing.
 
 ```fsharp
 type Person =
@@ -84,6 +89,10 @@ let jsonOptionsHandler : HttpHandler =
     options.DefaultIgnoreCondition <- JsonIgnoreCondition.WhenWritingNull
     let name = { First = "John"; Last = "Doe" }
     Response.ofJsonOptions options name
+
+let streamingJsonHandler : HttpHandler =
+    let name = { First = "John"; Last = "Doe" }
+    Response.ofJsonChunked name
 ```
 
 ## Redirect (301/302) Response

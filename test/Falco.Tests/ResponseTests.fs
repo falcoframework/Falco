@@ -1,5 +1,8 @@
 ﻿module Falco.Tests.Response
 
+open System
+open System.Buffers
+open System.IO.Pipelines
 open System.Security.Claims
 open System.Text
 open System.Text.Json
@@ -219,6 +222,38 @@ let ``Response.ofPlainText produces text/plain result`` () =
         contentType   |> should equal "text/plain; charset=utf-8"
     }
 
+// [<Fact>]
+// let ``Response.ofPlainText writes and flushes through BodyWriter`` () =
+//     let ctx = getHttpContextWriteable false
+//     let pipe = new Pipe()
+//     ctx.Response.BodyWriter.Returns(pipe.Writer) |> ignore
+//     let expected = "hello \u00e9"
+
+//     task {
+//         do! ctx |> Response.ofPlainText expected
+//         let! result = pipe.Reader.ReadAsync()
+//         let actual = Encoding.UTF8.GetString(result.Buffer.ToArray())
+//         pipe.Reader.AdvanceTo(result.Buffer.End)
+//         do! pipe.Reader.CompleteAsync()
+//         do! pipe.Writer.CompleteAsync()
+
+//         actual |> should equal expected
+//         ctx.Response.ContentLength |> should equal (int64 (Encoding.UTF8.GetByteCount(expected)))
+//     }
+
+// [<Fact>]
+// let ``Response.ofPlainText reports a canceled BodyWriter flush`` () =
+//     let ctx = getHttpContextWriteable false
+//     let pipe = new Pipe()
+//     ctx.Response.BodyWriter.Returns(pipe.Writer) |> ignore
+//     pipe.Writer.CancelPendingFlush()
+
+//     task {
+//         let! _ = Assert.ThrowsAsync<OperationCanceledException>(fun () -> Response.ofPlainText "hello" ctx)
+//         do! pipe.Reader.CompleteAsync()
+//         do! pipe.Writer.CompleteAsync()
+//     }
+
 [<Fact>]
 let ``Response.ofPlainText with empty string`` () =
     let ctx = getHttpContextWriteable false
@@ -390,12 +425,60 @@ let ``Response.ofJson produces applicaiton/json result`` () =
             |> Response.ofJson { Name = "John Doe"}
 
         let! body = getResponseBody ctx
-        let contentLength = ctx.Response.ContentLength
         let contentType = ctx.Response.Headers.[HeaderNames.ContentType][0]
 
         body          |> should equal expected
-        contentLength |> should equal (int64 (Encoding.UTF8.GetByteCount(expected)))
+        ctx.Response.ContentLength |> should equal (int64 (Encoding.UTF8.GetByteCount(expected)))
         contentType   |> should equal "application/json; charset=utf-8"
+    }
+
+[<Fact>]
+let ``Response.ofJsonChunked clears an existing content length before streaming`` () =
+    let ctx = getHttpContextWriteable false
+    ctx.Response.ContentLength <- Nullable 123L
+
+    task {
+        do! ctx |> Response.ofJsonChunked {| message = "hello" |}
+        let! body = getResponseBody ctx
+        body |> should equal "{\"message\":\"hello\"}"
+        ctx.Response.ContentLength.HasValue |> should equal false
+        ctx.Response.ContentType |> should equal "application/json; charset=utf-8"
+    }
+
+[<Fact>]
+let ``Response.ofJsonChunked writes large results while serializing`` () =
+    let ctx = getHttpContextWriteable false
+    let mutable wroteDuringSerialization = false
+    let values = seq {
+        for i in 1 .. 2000 do
+            if i = 1000 then
+                wroteDuringSerialization <- ctx.Response.Body.Length > 0L
+            yield String('x', 128)
+    }
+
+    task {
+        do! ctx |> Response.ofJsonChunked values
+        wroteDuringSerialization |> should equal true
+    }
+
+[<Fact>]
+let ``Response.ofJsonOptionsChunked writes to BodyWriter with custom options`` () =
+    let ctx = getHttpContextWriteable false
+    let pipe = new Pipe()
+    ctx.Response.BodyWriter.Returns(pipe.Writer) |> ignore
+    let options = JsonSerializerOptions()
+    options.DefaultIgnoreCondition <- JsonIgnoreCondition.WhenWritingNull
+
+    task {
+        do! ctx |> Response.ofJsonOptionsChunked options { Name = null }
+        let! result = pipe.Reader.ReadAsync()
+        let actual = Encoding.UTF8.GetString(result.Buffer.ToArray())
+        pipe.Reader.AdvanceTo(result.Buffer.End)
+        do! pipe.Reader.CompleteAsync()
+        do! pipe.Writer.CompleteAsync()
+
+        actual |> should equal "{}"
+        ctx.Response.ContentLength.HasValue |> should equal false
     }
 
 [<Fact>]
@@ -455,11 +538,10 @@ let ``Response.ofJsonOptions produces applicaiton/json result ignoring nulls`` (
             |> Response.ofJsonOptions jsonOptions { Name = null }
 
         let! body = getResponseBody ctx
-        let contentLength = ctx.Response.ContentLength
         let contentType = ctx.Response.Headers.[HeaderNames.ContentType][0]
 
         body          |> should equal expected
-        contentLength |> should equal (int64 (Encoding.UTF8.GetByteCount(expected)))
+        ctx.Response.ContentLength |> should equal (int64 (Encoding.UTF8.GetByteCount(expected)))
         contentType   |> should equal "application/json; charset=utf-8"
     }
 

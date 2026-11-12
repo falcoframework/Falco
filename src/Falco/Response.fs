@@ -36,7 +36,7 @@ let withHeaders
 let withContentType
     (contentType : string) : HttpResponseModifier = fun ctx ->
     ctx.Response.ContentType <- contentType
-    withHeaders [ HeaderNames.ContentType, contentType ] ctx
+    ctx
 
 /// Sets the status code for the response.
 ///
@@ -112,6 +112,9 @@ let private writeBytes
         task {
             ctx.Response.ContentLength <- bytes.LongLength
             do! ctx.Response.Body.WriteAsync(bytes, 0, bytes.Length)
+            // let! result = ctx.Response.BodyWriter.WriteAsync(ReadOnlyMemory<byte>(bytes))
+            // if result.IsCanceled then
+            //     raise (OperationCanceledException("Response body write was canceled."))
         }
 
 /// Returns an inline binary (i.e., Byte[]) response with the specified
@@ -249,8 +252,41 @@ let ofJsonOptions
 /// - `obj` - The object to serialize to JSON and write to the response body.
 let ofJson
     (obj : 'T) : HttpHandler =
+    ofJsonOptions Request.defaultJsonOptions obj
+
+/// Streams an "application/json; charset=utf-8" response using the provided options.
+///
+/// Content-Length is not set. If serialization fails, part of the response may
+/// already have been written.
+///
+/// - `options` - The JsonSerializerOptions to use when serializing the object to JSON.
+/// - `obj` - The object to serialize to JSON and write to the response body.
+let ofJsonOptionsChunked
+    (options : JsonSerializerOptions)
+    (obj : 'T) : HttpHandler =
     withContentType "application/json; charset=utf-8"
-    >> ofJsonOptions Request.defaultJsonOptions obj
+    >> fun ctx ->
+        ctx.Response.ContentLength <- Nullable()
+        let writer = ctx.Response.BodyWriter
+#if NET8_0
+        JsonSerializer.SerializeAsync(writer.AsStream(leaveOpen = true), obj, options)
+#else
+        // The PipeWriter serializer requires support for UnflushedBytes.
+        if writer.CanGetUnflushedBytes then
+            JsonSerializer.SerializeAsync(writer, obj, options)
+        else
+            JsonSerializer.SerializeAsync(writer.AsStream(leaveOpen = true), obj, options)
+#endif
+
+/// Streams an "application/json; charset=utf-8" response using the default options.
+///
+/// Content-Length is not set. If serialization fails, part of the response may
+/// already have been written.
+///
+/// - `obj` - The object to serialize to JSON and write to the response body.
+let ofJsonChunked
+    (obj : 'T) : HttpHandler =
+    ofJsonOptionsChunked Request.defaultJsonOptions obj
 
 /// Signs in the claim principal for the provided scheme.
 ///

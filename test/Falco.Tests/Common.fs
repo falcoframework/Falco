@@ -55,6 +55,8 @@ let getHttpContextWriteable (authenticated : bool) =
 
     let resp = Substitute.For<HttpResponse>()
     resp.Headers.Returns(Substitute.For<HeaderDictionary>()) |> ignore
+    resp.When(fun r -> r.ContentType <- Arg.Any<string>()).Do(fun args ->
+        resp.Headers.ContentType <- Microsoft.Extensions.Primitives.StringValues(args.Arg<string>()))
 
     let respBody = new MemoryStream()
     resp.BodyWriter.Returns(PipeWriter.Create respBody) |> ignore

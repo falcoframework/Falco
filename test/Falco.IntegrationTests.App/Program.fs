@@ -51,6 +51,9 @@ let endpoints =
         get "/json"
             (Response.ofJson { Message = "hello world" })
 
+        get "/json-stream"
+            (Response.ofJsonChunked { Message = "hello world" })
+
         mapGet "/hello/{name?}" mapRouteData
             (fun person -> Request.mapQuery (mapRequestData person) Response.ofJson)
 

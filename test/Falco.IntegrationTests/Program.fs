@@ -1,5 +1,6 @@
 namespace Falco.IntegrationTests
 
+open System
 open System.Net.Http
 open System.Text
 open System.Text.Json
@@ -32,6 +33,25 @@ module Tests =
         use client = factory.CreateClient ()
         let content = client.GetStringAsync("/json").Result
         Assert.Equal("""{"Message":"hello world"}""", content)
+
+    [<Fact>]
+    let ``GET /json includes the content length`` () = task {
+        use client = factory.CreateClient()
+        use! response = client.GetAsync("/json", HttpCompletionOption.ResponseHeadersRead)
+        Assert.Equal(Nullable 25L, response.Content.Headers.ContentLength)
+        let! content = response.Content.ReadAsStringAsync()
+        Assert.Equal("""{"Message":"hello world"}""", content)
+    }
+
+    [<Fact>]
+    let ``GET /json-stream streams without a content length`` () = task {
+        use client = factory.CreateClient()
+        use! response = client.GetAsync("/json-stream", HttpCompletionOption.ResponseHeadersRead)
+        Assert.False(response.Content.Headers.ContentLength.HasValue)
+        let! content = response.Content.ReadAsStringAsync()
+        Assert.True(response.IsSuccessStatusCode, content)
+        Assert.Equal("""{"Message":"hello world"}""", content)
+    }
 
     [<Fact>]
     let ``Receive mapped application/json response from: GET /hello/name?`` () =
