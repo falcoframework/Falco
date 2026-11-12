@@ -1,7 +1,4 @@
 <Solution>
-  <Folder Name="/site/">
-    <Project Path="site/Site.fsproj" />
-  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Falco/Falco.fsproj" />
   </Folder>

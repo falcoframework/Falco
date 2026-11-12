@@ -324,13 +324,13 @@ let main args =
     printfn "Rendering docs...\n  From: %s\n  To:   %s" docsDir.FullName docsBuildDir.FullName
     Docs.build (docsDir.GetFiles "*.md") docsBuildDir
 
-    // Additional languages
-    let languageCodes = []
+    // // Additional languages
+    // let languageCodes = []
 
-    for languageCode in languageCodes do
-        printfn "Rendering /%s docs" languageCode
-        let languageDir = DirectoryInfo(Path.Join(docsDir.FullName, languageCode))
-        let languageBuildDir = DirectoryInfo(Path.Join(docsBuildDir.FullName, languageCode))
-        Docs.build (languageDir.GetFiles() "*.md") languageBuildDir
+    // for languageCode in languageCodes do
+    //     printfn "Rendering /%s docs" languageCode
+    //     let languageDir = DirectoryInfo(Path.Join(docsDir.FullName, languageCode))
+    //     let languageBuildDir = DirectoryInfo(Path.Join(docsBuildDir.FullName, languageCode))
+    //     Docs.build (languageDir.GetFiles()) "*.md") languageBuildDir
 
     0
