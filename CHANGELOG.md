@@ -10,11 +10,13 @@ All notable changes to this project will be documented in this file.
 - `Routing.mapAll` which produces `HttpEndpoint` by associating a route pattern to `HttpVerb * HttpHandler` pairs.
 - `Request.getBodyStringOptions` to allow configuration of the maximum request body size, with a default of `Multipart.DefaultMaxSize` (32MB).
 - `Request.getFormOptions` to allow configuration of the maximum form size, with a default of `Multipart.DefaultMaxSize` (32MB).
+- `Response.ofJsonChunked` and `Response.ofJsonOptionsChunked` for streaming JSON responses without a `Content-Length` header.
 - Guards to `RequestValue.parse` to prevent oversized numerics or leading-zero numeric strings (non-decimal) from being parsed as floats.
 - Max size constraint to multipart form streaming, with a default of `Multipart.DefaultMaxSize` (32MB).
 
 ### Changed
 
+- Updated `Falco.Markup` to [version 1.4.1](https://www.nuget.org/packages/Falco.Markup/1.4.1), improving rendering performance and fixing quadratic-time attribute serialization. This removes its public `StringBuilderCache` type.
 - `Request.getForm` now automatically performs CSRF validation if antiforgery services are registered and the request method is POST, PUT, PATCH, or DELETE. Returns `FormData option` when consumption or CSRF validation fails.
 - Increased multipart form streaming buffer size from 1024 to 8192 bytes to improve performance of large file uploads.
 - `Request.ifAuthenticatedInRole` accepts roles as `seq` instead of `list` for more flexible input options.

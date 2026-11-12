@@ -37,7 +37,7 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Update="FSharp.Core" Version="6.0.0" />
-    <PackageReference Include="Falco.Markup" Version="1.4.*" />
+    <PackageReference Include="Falco.Markup" Version="1.4.1" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.*" PrivateAssets="All" />
   </ItemGroup>
 
