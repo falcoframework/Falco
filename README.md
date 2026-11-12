@@ -2,7 +2,6 @@
 
 [![NuGet Version](https://img.shields.io/nuget/v/Falco.svg)](https://www.nuget.org/packages/Falco)
 [![build](https://github.com/FalcoFramework/Falco/actions/workflows/build.yml/badge.svg)](https://github.com/FalcoFramework/Falco/actions/workflows/build.yml)
-[![Sourcegraph](https://sourcegraph.com/github.com/falcoframework/falco/-/badge.svg)](https://sourcegraph.com/github.com/falcoframework/falco?badge)
 
 ```fsharp
 open Falco
