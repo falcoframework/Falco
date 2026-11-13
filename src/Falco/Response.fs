@@ -111,10 +111,12 @@ let private writeBytes
     (bytes : byte[]) : HttpHandler = fun ctx ->
         task {
             ctx.Response.ContentLength <- bytes.LongLength
-            do! ctx.Response.Body.WriteAsync(bytes, 0, bytes.Length)
-            // let! result = ctx.Response.BodyWriter.WriteAsync(ReadOnlyMemory<byte>(bytes))
-            // if result.IsCanceled then
-            //     raise (OperationCanceledException("Response body write was canceled."))
+
+            if ctx.Request.Method <> HttpMethods.Head then
+                let! result = ctx.Response.BodyWriter.WriteAsync(ReadOnlyMemory<byte>(bytes))
+
+                if result.IsCanceled then
+                    raise (OperationCanceledException("Response body write was canceled."))
         }
 
 /// Returns an inline binary (i.e., Byte[]) response with the specified
