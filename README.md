@@ -1,3 +1,5 @@
+> Note: This readme describes the pre-release version v6 of Falco. For the stable version, see [falco/v5](https://github.com/falcoframework/Falco/tree/v5).
+
 # Falco
 
 [![NuGet Version](https://img.shields.io/nuget/v/Falco.svg)](https://www.nuget.org/packages/Falco)
